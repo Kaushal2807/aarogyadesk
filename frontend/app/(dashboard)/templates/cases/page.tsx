@@ -1,0 +1,161 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { BiSave, BiShow } from 'react-icons/bi';
+import Button from '@/components/ui/Button';
+import FormInput from '@/components/forms/FormInput';
+import { templateService } from '@/lib/services/templates';
+import { Template } from '@/types';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
+
+const caseVariables = [
+  { label: 'Patient UID', value: '{{patient_uid}}' },
+  { label: 'Patient Name', value: '{{patient_name}}' },
+  { label: 'Patient Age', value: '{{patient_age}}' },
+  { label: 'Contact Number', value: '{{patient_contact}}' },
+  { label: 'Address', value: '{{patient_address}}' },
+  { label: 'Visit Date', value: '{{visit_date}}' },
+  { label: 'Chief Complaint', value: '{{chief_complaint}}' },
+  { label: 'Medical History', value: '{{medical_history}}' },
+  { label: 'Oral / Diet Habits', value: '{{oral_habit}}' },
+  { label: 'Family History', value: '{{family_history}}' },
+  { label: 'X-Ray Remark', value: '{{xray_remark}}' },
+  { label: 'Doctor Name', value: '{{doctor_name}}' },
+  { label: 'Clinic Name', value: '{{clinic_name}}' },
+];
+
+const defaultContent = '<h2 style="text-align:center">CASE DETAIL SHEET</h2>' +
+  '<table style="width:100%;border-collapse:collapse"><tbody>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc;width:30%"><strong>Patient UID:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_uid}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Patient Name:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_name}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Age:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_age}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Contact:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_contact}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Address:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_address}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Visit Date:</strong></td><td style="padding:4px;border:1px solid #ccc">{{visit_date}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Chief Complaint:</strong></td><td style="padding:4px;border:1px solid #ccc">{{chief_complaint}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Medical History:</strong></td><td style="padding:4px;border:1px solid #ccc">{{medical_history}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Oral/Diet Habits:</strong></td><td style="padding:4px;border:1px solid #ccc">{{oral_habit}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Family History:</strong></td><td style="padding:4px;border:1px solid #ccc">{{family_history}}</td></tr>' +
+  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>X-Ray Remark:</strong></td><td style="padding:4px;border:1px solid #ccc">{{xray_remark}}</td></tr>' +
+  '</tbody></table>';
+
+export default function CaseTemplatePage() {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [templateName, setTemplateName] = useState('Default Case Sheet');
+  const [content, setContent] = useState(defaultContent);
+  const [showPreview, setShowPreview] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const data = await templateService.getAll();
+        setTemplates(data);
+        const caseSheet = data.find(t => t.template_name.toLowerCase().includes('case'));
+        if (caseSheet) {
+          setSelectedTemplateId(caseSheet.id);
+          setTemplateName(caseSheet.template_name);
+          setContent(caseSheet.template_content || defaultContent);
+        }
+      } catch {
+        // templates are optional
+      }
+    };
+    fetchTemplates();
+  }, []);
+
+  const insertVariable = (variable: string) => {
+    setContent(prev => prev + variable);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      if (selectedTemplateId) {
+        await templateService.update(selectedTemplateId, { template_name: templateName, template_content: content });
+      } else {
+        const created = await templateService.create({ template_name: templateName, template_content: content });
+        setSelectedTemplateId(created.id);
+        setTemplates(prev => [...prev, created]);
+      }
+      setMessage('Template saved successfully!');
+    } catch (err: any) {
+      setMessage(err.response?.data?.detail || 'Failed to save template');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSelectTemplate = async (id: number) => {
+    const tmpl = templates.find(t => t.id === id);
+    if (tmpl) {
+      setSelectedTemplateId(tmpl.id);
+      setTemplateName(tmpl.template_name);
+      setContent(tmpl.template_content || defaultContent);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3">
+          <h5 className="font-bold text-slate-800 text-lg">Case Detail Template Builder</h5>
+          {templates.length > 0 && (
+            <select value={selectedTemplateId || ''} onChange={(e) => handleSelectTemplate(Number(e.target.value))} className="text-sm border border-slate-200 rounded-lg px-2 py-1">
+              <option value="">New Template</option>
+              {templates.filter(t => t.template_name.toLowerCase().includes('case')).map(t => (
+                <option key={t.id} value={t.id}>{t.template_name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {message && <span className={`text-xs ${message.includes('success') ? 'text-emerald-600' : 'text-red-600'}`}>{message}</span>}
+          <Button variant="outline-secondary" onClick={() => setShowPreview(!showPreview)} icon={<BiShow />}>
+            {showPreview ? 'Edit' : 'Preview'}
+          </Button>
+          <Button onClick={handleSave} loading={saving} icon={<BiSave />}>Save Template</Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-card p-4 sticky top-4">
+            <h6 className="font-bold text-sm text-slate-700 mb-3">Template Name</h6>
+            <FormInput label="" value={templateName} onChange={(e) => setTemplateName(e.target.value)} name="template_name" />
+
+            <h6 className="font-bold text-sm text-slate-700 mt-4 mb-3">Variables</h6>
+            <div className="space-y-2">
+              {caseVariables.map((v) => (
+                <button key={v.value} onClick={() => insertVariable(v.value)} className="w-full text-left px-3 py-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg transition-all font-medium">
+                  {v.label}
+                  <span className="block text-[10px] text-purple-400 mt-0.5">{v.value}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+            {showPreview ? (
+              <div className="p-6 min-h-[500px]">
+                <div className="border border-slate-200 rounded-xl p-8 bg-white prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+              </div>
+            ) : (
+              <div className="min-h-[500px]">
+                <ReactQuill theme="snow" value={content} onChange={setContent} modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline', 'strike'], [{ align: [] }], [{ list: 'ordered' }, { list: 'bullet' }], [{ indent: '-1' }, { indent: '+1' }], ['clean']] }} formats={['header', 'bold', 'italic', 'underline', 'strike', 'align', 'list', 'indent']} className="h-[440px]" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
