@@ -15,7 +15,15 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://10.123.8.131:3000",
+        "http://10.123.8.131:8000",
+        "https://aarogyadesk.vercel.app",
+        "https://www.aarogyadesk.me",
+        "https://aarogyadesk.me",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

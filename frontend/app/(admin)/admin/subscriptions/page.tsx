@@ -71,18 +71,31 @@ export default function AdminSubscriptionsPage() {
     return { label: 'Active', variant: 'success' as const };
   };
 
+  const getEndDate = (startDate: string, plan: string) => {
+    const end = new Date(startDate);
+    if (plan === '6 Months') end.setMonth(end.getMonth() + 6);
+    else if (plan === '1 Year') end.setFullYear(end.getFullYear() + 1);
+    else end.setMonth(end.getMonth() + 1);
+    return end.toISOString().split('T')[0];
+  };
+
   const handleRenew = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedSub) return;
     const form = new FormData(e.currentTarget);
+    const plan = form.get('plan_type') as string;
+    const startDate = form.get('start_date') as string;
+    const endDate = form.get('end_date') as string || getEndDate(startDate, plan);
     try {
       setSubmitting(true);
       await apiClient.put(`/subscriptions/${selectedSub.subscription_id}/renew`, {
-        plan_type: form.get('plan_type'),
+        plan_type: plan,
         plan_amount: Number(form.get('plan_amount')),
         payment_status: form.get('payment_status'),
         payment_method: form.get('payment_method'),
         transaction_reference: form.get('transaction_reference'),
+        start_date: startDate,
+        end_date: endDate,
       });
       setShowRenewModal(false);
       setSelectedSub(null);
@@ -181,22 +194,30 @@ export default function AdminSubscriptionsPage() {
       <Modal isOpen={showRenewModal} onClose={() => { setShowRenewModal(false); setSelectedSub(null); }} title={`Renew: ${selectedSub?.clinic_name || ''}`} size="md">
         <form onSubmit={handleRenew}>
           <div className="space-y-4">
+            <p className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Subscription Period</p>
             <FormSelect label="Plan Type" name="plan_type" options={[
               { value: '1 Month', label: '1 Month' },
               { value: '6 Months', label: '6 Months' },
               { value: '1 Year', label: '1 Year' },
             ]} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormInput label="Start Date" name="start_date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} />
+              <FormInput label="End Date" name="end_date" type="date" defaultValue={getEndDate(new Date().toISOString().split('T')[0], '1 Month')} />
+            </div>
+            <p className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Payment Details</p>
             <FormInput label="Plan Amount" name="plan_amount" type="number" defaultValue="1500" required />
-            <FormSelect label="Payment Method" name="payment_method" options={[
-              { value: 'Cash', label: 'Cash' },
-              { value: 'UPI', label: 'UPI' },
-              { value: 'Cheque', label: 'Cheque' },
-            ]} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormSelect label="Payment Method" name="payment_method" options={[
+                { value: 'Cash', label: 'Cash' },
+                { value: 'UPI', label: 'UPI' },
+                { value: 'Cheque', label: 'Cheque' },
+              ]} />
+              <FormSelect label="Payment Status" name="payment_status" options={[
+                { value: 'Paid', label: 'Paid' },
+                { value: 'Pending', label: 'Pending' },
+              ]} />
+            </div>
             <FormInput label="Transaction Reference" name="transaction_reference" placeholder="Optional" />
-            <FormSelect label="Payment Status" name="payment_status" options={[
-              { value: 'paid', label: 'Paid' },
-              { value: 'pending', label: 'Pending' },
-            ]} />
           </div>
           <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
             <Button type="submit" disabled={submitting}>{submitting ? 'Renewing...' : 'Renew Subscription'}</Button>

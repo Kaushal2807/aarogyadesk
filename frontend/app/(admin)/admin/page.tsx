@@ -6,6 +6,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import SearchInput from '@/components/ui/SearchInput';
 import FormInput from '@/components/forms/FormInput';
+import FormSelect from '@/components/forms/FormSelect';
 import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import apiClient from '@/lib/api';
@@ -18,6 +19,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [planType, setPlanType] = useState('1 Month');
 
   const fetchClinics = useCallback(async () => {
     try {
@@ -44,18 +46,49 @@ export default function AdminPage() {
     );
   }, [clinics, search]);
 
+  const getPlanDates = (plan: string) => {
+    const start = new Date().toISOString().split('T')[0];
+    let end: Date;
+    if (plan === '6 Months') {
+      end = new Date();
+      end.setMonth(end.getMonth() + 6);
+    } else if (plan === '1 Year') {
+      end = new Date();
+      end.setFullYear(end.getFullYear() + 1);
+    } else {
+      end = new Date();
+      end.setMonth(end.getMonth() + 1);
+    }
+    return { start, end: end.toISOString().split('T')[0] };
+  };
+
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     try {
       setSubmitting(true);
-      await apiClient.post('/clinics', {
+      const { data: clinic } = await apiClient.post('/clinics', {
         clinic_name: form.get('clinic_name'),
         clinic_code: form.get('clinic_code'),
         phone: form.get('phone'),
         email: form.get('email'),
         address: form.get('address'),
       });
+
+      const plan = form.get('plan_type') as string;
+      const { start, end } = getPlanDates(plan);
+
+      await apiClient.post('/subscriptions', {
+        clinic_id: clinic.clinic_id,
+        plan_type: plan,
+        plan_amount: Number(form.get('plan_amount')),
+        payment_status: form.get('payment_status') || 'Paid',
+        payment_method: form.get('payment_method') || null,
+        transaction_reference: form.get('transaction_reference') || null,
+        start_date: start,
+        end_date: end,
+      });
+
       setShowModal(false);
       fetchClinics();
     } catch (err: any) {
@@ -66,7 +99,7 @@ export default function AdminPage() {
   };
 
   const toggleStatus = async (clinicId: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'active' ? 'Inactive' : 'Active';
+    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
     try {
       await apiClient.put(`/clinics/${clinicId}`, { status: newStatus });
       fetchClinics();
@@ -115,7 +148,7 @@ export default function AdminPage() {
         <h5 className="font-bold text-slate-800 text-lg">Clinic Management</h5>
         <div className="flex items-center gap-3">
           <SearchInput value={search} onChange={setSearch} placeholder="Search clinics..." className="max-w-[250px]" />
-          <Button onClick={() => setShowModal(true)} icon={<BiPlusCircle />}>Add Clinic</Button>
+          <Button onClick={() => { setPlanType('1 Month'); setShowModal(true); }} icon={<BiPlusCircle />}>Add Clinic</Button>
         </div>
       </div>
 
@@ -153,16 +186,16 @@ export default function AdminPage() {
                     </td>
                     <td><span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold">{c.clinic_code}</span></td>
                     <td>
-                      <Badge variant={c.status === 'active' ? 'success' : 'danger'}>{c.status === 'active' ? 'Active' : 'Inactive'}</Badge>
+                      <Badge variant={c.status === 'Active' ? 'success' : 'danger'}>{c.status === 'Active' ? 'Active' : 'Inactive'}</Badge>
                     </td>
                     <td>
                       <div className="flex items-center justify-center gap-1">
                         <button
                           className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all"
-                          title={c.status === 'active' ? 'Deactivate' : 'Activate'}
+                          title={c.status === 'Active' ? 'Deactivate' : 'Activate'}
                           onClick={() => toggleStatus(c.clinic_id, c.status)}
                         >
-                          {c.status === 'active' ? <BiBlock className="w-4 h-4" /> : <BiCheckCircle className="w-4 h-4" />}
+                          {c.status === 'Active' ? <BiBlock className="w-4 h-4" /> : <BiCheckCircle className="w-4 h-4" />}
                         </button>
                         <button
                           className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
@@ -183,13 +216,49 @@ export default function AdminPage() {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Clinic" size="lg">
         <form onSubmit={handleAdd}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormInput label="Clinic Name" name="clinic_name" required placeholder="Enter clinic name" />
-            <FormInput label="Clinic Code" name="clinic_code" required placeholder="e.g. SWA" />
-            <FormInput label="Phone" name="phone" required placeholder="Clinic phone" />
-            <FormInput label="Email" name="email" type="email" required placeholder="clinic@email.com" />
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Clinic Details</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormInput label="Clinic Name" name="clinic_name" required placeholder="Enter clinic name" />
+              <FormInput label="Clinic Code" name="clinic_code" required placeholder="e.g. SWA" />
+              <FormInput label="Phone" name="phone" required placeholder="Clinic phone" />
+              <FormInput label="Email" name="email" type="email" required placeholder="clinic@email.com" />
+            </div>
+            <FormInput label="Address" name="address" required placeholder="Full address" />
+
+            <p className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2 mt-2">Subscription Details</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormSelect
+                label="Plan Type"
+                name="plan_type"
+                options={[
+                  { value: '1 Month', label: '1 Month' },
+                  { value: '6 Months', label: '6 Months' },
+                  { value: '1 Year', label: '1 Year' },
+                ]}
+                onChange={(e) => setPlanType(e.target.value)}
+              />
+              <FormInput label="Plan Amount" name="plan_amount" type="number" required defaultValue="1500" />
+              <FormSelect
+                label="Payment Method"
+                name="payment_method"
+                options={[
+                  { value: 'Cash', label: 'Cash' },
+                  { value: 'UPI', label: 'UPI' },
+                  { value: 'Cheque', label: 'Cheque' },
+                ]}
+              />
+              <FormSelect
+                label="Payment Status"
+                name="payment_status"
+                options={[
+                  { value: 'Paid', label: 'Paid' },
+                  { value: 'Pending', label: 'Pending' },
+                ]}
+              />
+            </div>
+            <FormInput label="Transaction Reference" name="transaction_reference" placeholder="Optional" />
           </div>
-          <FormInput label="Address" name="address" required placeholder="Full address" />
           <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
             <Button type="submit" disabled={submitting}>{submitting ? 'Adding...' : 'Add Clinic'}</Button>
           </div>

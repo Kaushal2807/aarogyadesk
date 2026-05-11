@@ -2,17 +2,24 @@ from sqlalchemy.orm import Session
 from datetime import date
 from app.models.subscription import ClinicSubscription
 from app.models.clinic import ClinicData
-from app.schemas.subscription import SubscriptionCreate, SubscriptionRenew
+from app.schemas.subscription import SubscriptionCreate, SubscriptionRenew, SubscriptionResponse
 
 
 def get_subscriptions(db: Session, skip: int = 0, limit: int = 100):
-    return (
-        db.query(ClinicSubscription)
+    rows = (
+        db.query(ClinicSubscription, ClinicData.clinic_name)
+        .outerjoin(ClinicData, ClinicSubscription.clinic_id == ClinicData.clinic_id)
         .order_by(ClinicSubscription.created_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
+    result = []
+    for sub, clinic_name in rows:
+        data = SubscriptionResponse.model_validate(sub).model_dump()
+        data['clinic_name'] = clinic_name
+        result.append(data)
+    return result
 
 
 def get_subscription(db: Session, subscription_id: int):
@@ -62,6 +69,13 @@ def renew_subscription(db: Session, subscription_id: int, data: SubscriptionRene
         subscription.transaction_reference = data.transaction_reference
     if data.received_by is not None:
         subscription.received_by = data.received_by
+    if data.start_date is not None:
+        subscription.start_date = data.start_date
+    if data.end_date is not None:
+        subscription.end_date = data.end_date
+        clinic = db.query(ClinicData).filter(ClinicData.clinic_id == subscription.clinic_id).first()
+        if clinic:
+            clinic.current_subscription_end = data.end_date
 
     db.add(subscription)
     db.commit()

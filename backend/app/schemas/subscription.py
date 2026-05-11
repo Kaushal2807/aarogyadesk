@@ -24,11 +24,14 @@ class SubscriptionRenew(BaseModel):
     payment_method: Optional[Literal["Cash", "UPI", "Cheque"]] = None
     transaction_reference: Optional[str] = None
     received_by: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
 
 class SubscriptionResponse(BaseModel):
     subscription_id: int
     clinic_id: int
+    clinic_name: Optional[str] = None
     plan_type: Optional[str] = None
     plan_amount: Optional[float] = None
     payment_status: str = "Paid"

@@ -33,16 +33,18 @@ export const auth = {
   },
 
   register: async (
-    username: string,
+    name: string,
     email: string,
     password: string,
-    full_name: string
+    user_type: 'admin' | 'clinic' = 'clinic',
+    clinic_id?: number
   ): Promise<User> => {
     const response = await apiClient.post('/auth/register', {
-      username,
+      name,
       email,
       password,
-      full_name,
+      user_type,
+      ...(clinic_id !== undefined && { clinic_id }),
     });
     return response.data;
   },

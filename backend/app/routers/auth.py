@@ -8,6 +8,7 @@ from app.core.security import create_access_token
 from app.core.config import settings
 from app.deps import get_current_user, require_admin
 from app.models.user import User
+from app.models.clinic import ClinicData
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -17,6 +18,14 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     user = authenticate_user(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if user.status == 'Inactive':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
+
+    if user.clinic_id:
+        clinic = db.query(ClinicData).filter(ClinicData.clinic_id == user.clinic_id).first()
+        if clinic and clinic.status == 'Inactive':
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Clinic is inactive")
 
     access_token = create_access_token(
         data={"sub": user.email},

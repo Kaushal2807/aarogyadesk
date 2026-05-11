@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { BiPlusCircle, BiSolidPencil, BiLock, BiTrash } from 'react-icons/bi';
+import { BiPlusCircle, BiSolidPencil, BiLock, BiTrash, BiBlock, BiCheckCircle } from 'react-icons/bi';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import SearchInput from '@/components/ui/SearchInput';
@@ -16,10 +16,13 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [newUserType, setNewUserType] = useState('clinic');
+  const [editForm, setEditForm] = useState({ name: '', email: '', user_type: 'clinic', clinic_id: '', status: 'Active' });
 
   const fetchData = useCallback(async () => {
     try {
@@ -67,7 +70,7 @@ export default function AdminUsersPage() {
         user_type: (form.get('user_type') as string) || 'clinic',
         clinic_id: Number(form.get('clinic_id')) || null,
       });
-      setShowModal(false);
+      setShowAddModal(false);
       fetchData();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to add user');
@@ -76,10 +79,42 @@ export default function AdminUsersPage() {
     }
   };
 
-  const toggleUserStatus = async (userId: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+  const openEditModal = (user: User) => {
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      user_type: user.user_type,
+      clinic_id: user.clinic_id ? String(user.clinic_id) : '',
+      status: user.status,
+    });
+    setEditUser(user);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editUser) return;
+    const form = new FormData(e.currentTarget);
     try {
-      await apiClient.put(`/users/${userId}/status`, { status: newStatus });
+      setSubmitting(true);
+      await apiClient.put(`/users/${editUser.id}`, {
+        name: form.get('name'),
+        email: form.get('email'),
+        user_type: form.get('user_type') || editUser.user_type,
+        clinic_id: Number(form.get('clinic_id')) || null,
+        status: form.get('status') || editUser.status,
+      });
+      setEditUser(null);
+      fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to update user');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleUserStatus = async (userId: number) => {
+    try {
+      await apiClient.put(`/users/${userId}/status`);
       fetchData();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to update user status');
@@ -137,7 +172,7 @@ export default function AdminUsersPage() {
         <h5 className="font-bold text-slate-800 text-lg">User Management</h5>
         <div className="flex items-center gap-3">
           <SearchInput value={search} onChange={setSearch} placeholder="Search users..." className="max-w-[250px]" />
-          <Button onClick={() => setShowModal(true)} icon={<BiPlusCircle />}>Add User</Button>
+          <Button onClick={() => { setNewUserType('clinic'); setShowAddModal(true); }} icon={<BiPlusCircle />}>Add User</Button>
         </div>
       </div>
 
@@ -184,7 +219,14 @@ export default function AdminUsersPage() {
                     <td className="text-sm text-slate-400">{u.created_at?.split('T')[0]}</td>
                     <td>
                       <div className="flex items-center justify-center gap-1">
-                        <button className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-all" title="Edit" onClick={() => toggleUserStatus(u.id, u.status)}>
+                        <button
+                          className="p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all"
+                          title={u.status === 'Active' ? 'Deactivate' : 'Activate'}
+                          onClick={() => toggleUserStatus(u.id)}
+                        >
+                          {u.status === 'Active' ? <BiBlock className="w-4 h-4" /> : <BiCheckCircle className="w-4 h-4" />}
+                        </button>
+                        <button className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-all" title="Edit" onClick={() => openEditModal(u)}>
                           <BiSolidPencil className="w-4 h-4" />
                         </button>
                         <button
@@ -211,22 +253,45 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New User" size="md">
+      {/* Add User Modal */}
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New User" size="md">
         <form onSubmit={handleAdd}>
           <div className="space-y-4">
             <FormInput label="Name" name="name" required placeholder="User name" />
             <FormInput label="Email" name="email" type="email" required placeholder="user@email.com" />
             <FormInput label="Password" name="password" type="password" required placeholder="Set password" />
-            <FormSelect label="User Type" name="user_type" options={[{ value: 'admin', label: 'Admin' }, { value: 'clinic', label: 'Clinic' }]} />
-            <FormSelect
+            <FormSelect label="User Type" name="user_type" options={[{ value: 'admin', label: 'Admin' }, { value: 'clinic', label: 'Clinic' }]} onChange={(e) => setNewUserType(e.target.value)} />
+            {newUserType === 'clinic' && <FormSelect
               label="Clinic"
               name="clinic_id"
               options={clinics.map(c => ({ value: String(c.clinic_id), label: c.clinic_name }))}
               placeholder="Select clinic (for clinic users)"
-            />
+            />}
           </div>
           <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
             <Button type="submit" disabled={submitting}>{submitting ? 'Adding...' : 'Add User'}</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit User Modal */}
+      <Modal isOpen={!!editUser} onClose={() => setEditUser(null)} title="Edit User" size="md">
+        <form onSubmit={handleEdit}>
+          <div className="space-y-4">
+            <FormInput label="Name" name="name" required defaultValue={editForm.name} placeholder="User name" />
+            <FormInput label="Email" name="email" type="email" required defaultValue={editForm.email} placeholder="user@email.com" />
+            <FormSelect label="User Type" name="user_type" options={[{ value: 'admin', label: 'Admin' }, { value: 'clinic', label: 'Clinic' }]} defaultValue={editForm.user_type} />
+            {editForm.user_type === 'clinic' && <FormSelect
+              label="Clinic"
+              name="clinic_id"
+              options={clinics.map(c => ({ value: String(c.clinic_id), label: c.clinic_name }))}
+              placeholder="Select clinic"
+              defaultValue={editForm.clinic_id}
+            />}
+            <FormSelect label="Status" name="status" options={[{ value: 'Active', label: 'Active' }, { value: 'Inactive', label: 'Inactive' }]} defaultValue={editForm.status} />
+          </div>
+          <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
+            <Button type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save Changes'}</Button>
           </div>
         </form>
       </Modal>
