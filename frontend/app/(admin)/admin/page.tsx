@@ -19,7 +19,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [planType, setPlanType] = useState('1 Month');
 
   const fetchClinics = useCallback(async () => {
     try {
@@ -148,7 +147,7 @@ export default function AdminPage() {
         <h5 className="font-bold text-slate-800 text-lg">Clinic Management</h5>
         <div className="flex items-center gap-3">
           <SearchInput value={search} onChange={setSearch} placeholder="Search clinics..." className="max-w-[250px]" />
-          <Button onClick={() => { setPlanType('1 Month'); setShowModal(true); }} icon={<BiPlusCircle />}>Add Clinic</Button>
+          <Button onClick={() => setShowModal(true)} icon={<BiPlusCircle />}>Add Clinic</Button>
         </div>
       </div>
 
@@ -236,7 +235,6 @@ export default function AdminPage() {
                   { value: '6 Months', label: '6 Months' },
                   { value: '1 Year', label: '1 Year' },
                 ]}
-                onChange={(e) => setPlanType(e.target.value)}
               />
               <FormInput label="Plan Amount" name="plan_amount" type="number" required defaultValue="1500" />
               <FormSelect
