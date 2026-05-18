@@ -122,3 +122,4 @@ declare module 'react-icons/md' {
   export const MdOutlineMedicalServices: IconType;
   export const MdDashboard: IconType;
 }
+
