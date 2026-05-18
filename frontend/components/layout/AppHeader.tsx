@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,9 +24,13 @@ const templateLinks = [
 export default function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const [user, setUser] = useState<ReturnType<typeof auth.getCurrentUser>>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const user = auth.getCurrentUser();
+
+  useEffect(() => {
+    setUser(auth.getCurrentUser());
+  }, []);
 
   const handleLogout = () => {
     auth.logout();

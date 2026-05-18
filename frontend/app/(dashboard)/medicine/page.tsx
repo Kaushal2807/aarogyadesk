@@ -85,17 +85,31 @@ export default function MedicinePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-5">
+        {/* Search — left */}
         <div className="flex-1 max-w-[400px]">
           <SearchInput value={search} onChange={setSearch} placeholder="Search medicines..." />
         </div>
-        <Button onClick={() => setShowAddModal(true)} icon={<BiPlusCircle />}>Add Medicine</Button>
-        <button onClick={() => setShowLowStockModal(true)} className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600 shadow-md transition-all">
-          <BiError className="w-4 h-4" /> Low Stock Alert
-          {lowStockCount > 0 && (
-            <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">{lowStockCount}</span>
-          )}
-        </button>
+
+        {/* Action buttons — right, joined together */}
+        <div className="ml-auto flex items-stretch">
+          <Button
+            onClick={() => setShowAddModal(true)}
+            icon={<BiPlusCircle />}
+            className="!rounded-r-none"
+          >
+            Add Medicine
+          </Button>
+          <button
+            onClick={() => setShowLowStockModal(true)}
+            className="relative flex items-center gap-2 px-4 py-2 text-sm font-medium bg-amber-500 text-white rounded-l-none rounded-r-[10px] border-l border-amber-400 hover:bg-amber-600 shadow-md transition-all"
+          >
+            <BiError className="w-4 h-4" /> Low Stock Alert
+            {lowStockCount > 0 && (
+              <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">{lowStockCount}</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Error */}
