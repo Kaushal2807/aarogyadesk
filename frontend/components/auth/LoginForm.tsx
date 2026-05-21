@@ -40,16 +40,15 @@ export default function LoginForm({ onSubmit, loading = false, error = null }: L
           Email Address
         </label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <BiEnvelope className="w-4 h-4 text-slate-400" />
-          </div>
+          <BiEnvelope className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             id="login-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className="w-full py-2.5 pl-10 pr-4 text-sm border-2 border-slate-200 rounded-[10px] bg-white transition-all duration-300 focus:outline-none focus:border-[#003D7A] focus:shadow-[0_0_0_3px_rgba(0,61,122,0.1)] placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full py-2.5 pr-4 text-sm border-2 border-slate-200 rounded-[10px] bg-white transition-all duration-300 focus:outline-none focus:border-[#003D7A] focus:shadow-[0_0_0_3px_rgba(0,61,122,0.1)] placeholder:text-slate-400 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ paddingLeft: '2.25rem' }}
             placeholder="Enter your email address"
             required
             autoComplete="email"

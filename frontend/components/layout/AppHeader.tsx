@@ -24,6 +24,7 @@ const templateLinks = [
 export default function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const [user, setUser] = useState<ReturnType<typeof auth.getCurrentUser>>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [user, setUser] = useState<User | null>(null);

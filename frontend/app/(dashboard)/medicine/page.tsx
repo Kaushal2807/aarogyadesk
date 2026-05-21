@@ -182,7 +182,8 @@ export default function MedicinePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div className="flex items-center gap-3 mb-5">
+        {/* Search — left */}
         <div className="flex-1 max-w-[400px]">
           <SearchInput value={search} onChange={setSearch} placeholder="Search medicines..." />
         </div>

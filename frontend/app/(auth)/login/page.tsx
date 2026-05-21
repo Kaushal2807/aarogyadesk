@@ -46,34 +46,23 @@ export default function LoginPage() {
 
   return (
     <div
-      className="w-full max-w-[520px] bg-white p-8 sm:p-12 rounded-2xl shadow-lg shadow-black/[0.08]"
+      className="w-full max-w-[520px] bg-white p-4 sm:p-8 rounded-2xl shadow-lg shadow-black/[0.08]"
       style={{ animation: 'fadeInUp 0.6s ease forwards' }}
     >
-      {/* Title */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-          <span className="text-[#003D7A]">Aarogyas</span>
-          <span className="text-[#2E8B57]">desk</span>
-        </h1>
-        <p className="text-slate-500 text-sm font-medium">
-          Secure Login Portal
-        </p>
+      {/* Logo */}
+      <div className="flex justify-center mb-1">
+        <Image
+          src="/logo.png"
+          alt="Aarogyasdesk"
+          width={200}
+          height={200}
+          className="drop-shadow-md"
+          priority
+        />
       </div>
 
       {/* Login Form */}
       <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
-
-      {/* Logo at bottom of card */}
-      <div className="mt-8 pt-6 border-t border-slate-100 flex justify-center">
-        <Image
-          src="/logo.png"
-          alt="Aarogyasdesk"
-          width={80}
-          height={80}
-          className="opacity-70 hover:opacity-100 transition-opacity duration-300"
-          priority
-        />
-      </div>
     </div>
   );
 }

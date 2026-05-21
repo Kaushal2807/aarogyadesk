@@ -21,9 +21,8 @@ export default function PasswordInput({ label, error, id, className = '', ...pro
         <input
           id={id}
           type={showPassword ? 'text' : 'password'}
-          className={`flex-1 py-2.5 px-3.5 text-sm border-2 rounded-l-[10px] bg-white transition-all duration-300 focus:outline-none border-r-0 ${
-            error ? 'border-red-400' : 'border-slate-200 focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]'
-          }`}
+          className={`flex-1 py-2.5 px-3.5 text-sm border-2 rounded-l-[10px] bg-white transition-all duration-300 focus:outline-none border-r-0 ${error ? 'border-red-400' : 'border-slate-200 focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]'
+            }`}
           {...props}
         />
         <button
