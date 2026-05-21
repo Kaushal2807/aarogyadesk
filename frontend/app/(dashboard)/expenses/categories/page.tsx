@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { BiEdit, BiTrash } from 'react-icons/bi';
 import SearchInput from '@/components/ui/SearchInput';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -8,24 +9,25 @@ import FormInput from '@/components/forms/FormInput';
 import EmptyState from '@/components/ui/EmptyState';
 import { expenseService } from '@/lib/services/expenses';
 import { ExpenseCategory } from '@/types';
+import { toast } from 'react-hot-toast';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await expenseService.getCategories();
       setCategories(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load categories');
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to load categories');
     } finally {
       setLoading(false);
     }
@@ -46,16 +48,39 @@ export default function CategoriesPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId === null) return;
+    if (editingId === null || !editName.trim()) return;
     try {
       setSaving(true);
       await expenseService.updateCategory(editingId, { category_name: editName });
-      await fetchCategories();
+      setCategories(prev => 
+        prev.map(c => c.id === editingId ? { ...c, category_name: editName } : c)
+      );
       setEditingId(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update category');
+      setEditName('');
+      toast.success('✓ Category updated successfully', { 
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' } 
+      });
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to update category');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleteId === null) return;
+    try {
+      setDeleting(true);
+      await expenseService.deleteCategory(deleteId);
+      setCategories(prev => prev.filter(c => c.id !== deleteId));
+      setDeleteId(null);
+      toast.success('✓ Category deleted successfully', { 
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' } 
+      });
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to delete category');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -67,21 +92,45 @@ export default function CategoriesPage() {
       </div>
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-slate-500">Loading categories...</div>
-        ) : error ? (
-          <div className="p-8 text-center text-red-500">{error}</div>
+          <div className="p-8 text-center">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+              <span className="ml-3 text-slate-500">Loading categories...</span>
+            </div>
+          </div>
         ) : filtered.length === 0 ? (
           <EmptyState message="No categories found" />
         ) : (
-          <table className="cms-table">
-            <thead><tr><th>#</th><th>Category Name</th><th className="text-center">Action</th></tr></thead>
+          <table className="cms-table w-full">
+            <thead>
+              <tr>
+                <th className="text-left">#</th>
+                <th className="text-left">Category Name</th>
+                <th className="text-center">Actions</th>
+              </tr>
+            </thead>
             <tbody>
               {filtered.map((cat) => (
-                <tr key={cat.id}>
-                  <td>{cat.id}</td>
-                  <td>{cat.category_name}</td>
-                  <td className="text-center">
-                    <button onClick={() => handleEdit(cat)} className="px-2 py-1 text-xs font-medium bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-all">Edit</button>
+                <tr key={cat.id} className="hover:bg-slate-50">
+                  <td className="py-3 text-slate-600 font-medium">{cat.id}</td>
+                  <td className="py-3 text-slate-800 font-medium">{cat.category_name}</td>
+                  <td className="py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button 
+                        onClick={() => handleEdit(cat)}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Edit Category"
+                      >
+                        <BiEdit className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={() => setDeleteId(cat.id)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Delete Category"
+                      >
+                        <BiTrash className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -90,13 +139,64 @@ export default function CategoriesPage() {
         )}
       </div>
 
+      {/* Edit Modal */}
       <Modal isOpen={editingId !== null} onClose={() => setEditingId(null)} title="Edit Category" size="sm">
         <form onSubmit={handleUpdate}>
-          <FormInput label="Category Name" value={editName} onChange={(e) => setEditName(e.target.value)} required />
-          <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
-            <Button type="submit" disabled={saving}>{saving ? 'Updating...' : 'Update'}</Button>
+          <div className="py-4 space-y-4">
+            <FormInput 
+              label="Category Name *" 
+              value={editName} 
+              onChange={(e) => setEditName(e.target.value)} 
+              required 
+              placeholder="Enter category name"
+            />
+          </div>
+          <div className="flex justify-center pt-4 border-t border-slate-100 gap-3">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => setEditingId(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={saving}
+            >
+              {saving ? 'Updating...' : 'Update'}
+            </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={deleteId !== null} onClose={() => setDeleteId(null)} title="Confirm Delete" size="sm">
+        <div className="py-4">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <BiTrash className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Category?</h3>
+            <p className="text-slate-500 text-sm">
+              Are you sure you want to delete this category? This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-center mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

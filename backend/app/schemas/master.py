@@ -10,3 +10,14 @@ class MasterResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MasterCreate(BaseModel):
+    name: str
+
+
+class MasterUpdate(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True

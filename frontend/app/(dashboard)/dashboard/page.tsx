@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { BiCreditCard, BiSolidUserPlus, BiSolidCloudLightning, BiClipboard } from 'react-icons/bi';
+import { useRouter } from 'next/navigation';
+import { BiCreditCard, BiSolidUserPlus, BiSolidCloudLightning, BiClipboard, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
 import KPICard from '@/components/ui/KPICard';
 import Badge from '@/components/ui/Badge';
 import SearchInput from '@/components/ui/SearchInput';
@@ -22,13 +23,16 @@ import { patientService } from '@/lib/services/patients';
 import { treatmentService } from '@/lib/services/treatments';
 import { workDoneService } from '@/lib/services/work-done';
 import { Patient, PatientCount, PatientCreate, PatientUpdate } from '@/types';
+import { toast } from 'react-hot-toast';
 
 export default function DashboardPage() {
+  const ITEMS_PER_PAGE = 20;
   const [patients, setPatients] = useState<Patient[]>([]);
   const [patientCount, setPatientCount] = useState<PatientCount>({ total: 0, paid: 0, partial: 0, pending: 0 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showTreatmentPlanModal, setShowTreatmentPlanModal] = useState(false);
@@ -39,6 +43,17 @@ export default function DashboardPage() {
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [actionPatient, setActionPatient] = useState<Patient | null>(null);
+  const router = useRouter();
+
+  // Filter states
+  const today = new Date().toISOString().split('T')[0];
+  const currentMonth = new Date().getMonth(); // 0-11
+  const currentYear = new Date().getFullYear();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('paid');
+  const [selectedDate, setSelectedDate] = useState<string>(today);
 
   const fetchPatients = useCallback(async () => {
     try {
@@ -46,6 +61,7 @@ export default function DashboardPage() {
       setError(null);
       const data = await patientService.getAll({ search: search || undefined });
       setPatients(data);
+      setCurrentPage(1); // Reset to first page when data changes
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load patients');
     } finally {
@@ -77,46 +93,101 @@ export default function DashboardPage() {
 
   const handleAddPatient = async (data: Partial<Patient>) => {
     try {
-      await patientService.create(data as PatientCreate);
+      const created = await patientService.create(data as PatientCreate);
+      // Optimistically add patient to list without refetching
+      setPatients(prev => [created, ...prev]);
       setShowAddModal(false);
-      fetchPatients();
-      fetchCount();
+      toast.success('✓ Patient added successfully', {
+        duration: 3000,
+        style: {
+          background: '#10b981',
+          color: '#fff',
+          fontWeight: '500'
+        }
+      });
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add patient');
+      toast.error(err.response?.data?.detail || 'Failed to add patient');
     }
   };
 
   const handleEditPatient = async (data: Partial<Patient>) => {
     if (!selectedPatient) return;
     try {
-      await patientService.update(selectedPatient.patient_uid, data as PatientUpdate);
+      const updated = await patientService.update(selectedPatient.patient_uid, data as PatientUpdate);
+      // Optimistically update patient in list without refetching
+      setPatients(prev => prev.map(p => p.patient_uid === selectedPatient.patient_uid ? updated : p));
       setShowEditModal(false);
       setSelectedPatient(null);
-      fetchPatients();
+      toast.success('✓ Patient updated successfully', {
+        duration: 3000,
+        style: {
+          background: '#10b981',
+          color: '#fff',
+          fontWeight: '500'
+        }
+      });
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update patient');
+      toast.error(err.response?.data?.detail || 'Failed to update patient');
     }
   };
 
-  const handleTreatmentPlan = async (data: { diagnosis: string; treatment: string }) => {
-    try {
-      await treatmentService.createPlan(data);
-      setShowTreatmentPlanModal(false);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add treatment plan');
-    }
+  const handleTreatmentPlan = () => {
+    // Modal handles saving internally now
   };
 
-  const handleWorkDone = async (data: { work_name: string }) => {
-    try {
-      await workDoneService.createWorkType(data);
-      setShowWorkDoneModal(false);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add work done');
-    }
+  const handleWorkDone = () => {
+    // Modal handles saving internally now
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const handlePrintCase = (patient: Patient) => {
+    window.open(`/patients/${patient.patient_uid}/history`, '_blank');
+  };
+
+  // Calculate statistics based on filters
+  const getTotalPatientsByMonth = (): number => {
+    return patients.filter(p => {
+      if (!p.created_at) return false;
+      const patientMonth = new Date(p.created_at).getMonth();
+      const patientYear = new Date(p.created_at).getFullYear();
+      return patientMonth === selectedMonth && patientYear === currentYear;
+    }).length;
+  };
+
+  const getPaidPatientCount = (): number => {
+    return patients.filter(p => {
+      if (!p.payment_status) return false;
+      let status = p.payment_status.toLowerCase();
+      if (status === 'paid') return selectedPaymentStatus === 'paid';
+      if (status === 'partial payment' || status === 'partial') return selectedPaymentStatus === 'partial';
+      if (status === 'pending' || status === 'unpaid') return selectedPaymentStatus === 'pending';
+      return false;
+    }).length;
+  };
+
+  const getTodayPatients = (): number => {
+    return patients.filter(p => {
+      if (!p.date_of_visit) return false;
+      return p.date_of_visit === selectedDate;
+    }).length;
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedPatients = patients.slice(startIndex, endIndex);
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  };
+
+  const handlePageClick = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 mt-6 mb-4 relative">
@@ -125,15 +196,19 @@ export default function DashboardPage() {
         <KPICard
           title="Total Patients"
           subtitle="Patients registered"
-          value={patientCount.total}
+          value={getTotalPatientsByMonth()}
           icon={<span>👥</span>}
           bgClass="bg-indigo-50"
           iconBgClass="bg-indigo-600"
           textClass="text-indigo-800"
           filter={
-            <select className="border border-indigo-300 rounded-lg px-2 py-1 text-sm bg-white text-indigo-700">
-              {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m => (
-                <option key={m} value={m}>{m}</option>
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="border border-indigo-300 rounded-lg px-2 py-1 text-sm bg-white text-indigo-700 cursor-pointer font-medium"
+            >
+              {monthNames.map((m, idx) => (
+                <option key={idx} value={idx}>{m}</option>
               ))}
             </select>
           }
@@ -141,23 +216,27 @@ export default function DashboardPage() {
         <KPICard
           title="Payment Status"
           subtitle="Patients"
-          value={patientCount.paid}
+          value={getPaidPatientCount()}
           icon={<span>💳</span>}
           bgClass="bg-emerald-50"
           iconBgClass="bg-emerald-600"
           textClass="text-emerald-800"
           filter={
-            <select className="border border-emerald-300 rounded-lg px-2 py-1 text-sm bg-white text-emerald-700">
-              <option value="paid">Paid ({patientCount.paid})</option>
-              <option value="partial">Partial ({patientCount.partial})</option>
-              <option value="pending">Pending ({patientCount.pending})</option>
+            <select 
+              value={selectedPaymentStatus}
+              onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+              className="border border-emerald-300 rounded-lg px-2 py-1 text-sm bg-white text-emerald-700 cursor-pointer font-medium"
+            >
+              <option value="paid">Paid ({patients.filter(p => p.payment_status?.toLowerCase() === 'paid').length})</option>
+              <option value="partial">Partial ({patients.filter(p => ['partial', 'partial payment'].includes(p.payment_status?.toLowerCase() || '')).length})</option>
+              <option value="pending">Pending ({patients.filter(p => ['pending', 'unpaid'].includes(p.payment_status?.toLowerCase() || '')).length})</option>
             </select>
           }
         />
         <KPICard
           title="Today's Patients"
           subtitle="Patients visited"
-          value={patients.filter((p) => p.date_of_visit === today).length}
+          value={getTodayPatients()}
           icon={<span>📅</span>}
           bgClass="bg-purple-50"
           iconBgClass="bg-purple-600"
@@ -165,8 +244,9 @@ export default function DashboardPage() {
           filter={
             <input
               type="date"
-              defaultValue={today}
-              className="border border-purple-300 rounded-lg px-2 py-1 text-sm bg-white text-purple-700"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="border border-purple-300 rounded-lg px-2 py-1 text-sm bg-white text-purple-700 cursor-pointer font-medium"
             />
           }
         />
@@ -218,9 +298,9 @@ export default function DashboardPage() {
               <DropdownItem onClick={() => setShowWorkDoneModal(true)} icon={<BiCreditCard className="text-emerald-500" />}>
                 Work Done
               </DropdownItem>
-              <DropdownItem onClick={() => { setActionPatient(null); setShowPrescriptionModal(true); }} icon={<BiCreditCard className="text-emerald-500" />}>
-                Prescription
-              </DropdownItem>
+                        <DropdownItem onClick={() => { router.push('/prescription-master'); }} icon={<BiCreditCard className="text-emerald-500" />}>
+                          Prescription
+                        </DropdownItem>
             </Dropdown>
           </div>
         </div>
@@ -246,7 +326,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {patients.map((patient) => (
+                {paginatedPatients.map((patient) => (
                   <tr key={patient.id}>
                     <td className="font-semibold text-primary-500">{patient.patient_uid}</td>
                     <td className="font-medium">{patient.name}</td>
@@ -259,15 +339,20 @@ export default function DashboardPage() {
                         onAddPrescription={() => { setActionPatient(patient); setShowPrescriptionModal(true); }}
                         onAddWorkDone={() => { setActionPatient(patient); setShowPatientWorkModal(true); }}
                         onGenerateCertificate={() => { setActionPatient(patient); setShowCertificateModal(true); }}
+                        mode="full"
                       />
                     </td>
                     <td className="text-center">
                       <StatusBadge status={patient.payment_status} />
                     </td>
                     <td className="text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs text-slate-500">
-                        {patient.total_visit} visits
-                      </span>
+                      <PatientActionsCell
+                        patientUid={patient.patient_uid}
+                        patientName={patient.name}
+                        onPrintCase={() => handlePrintCase(patient)}
+                        onGenerateCertificate={() => { setActionPatient(patient); setShowCertificateModal(true); }}
+                        mode="print-only"
+                      />
                     </td>
                   </tr>
                 ))}
@@ -275,6 +360,60 @@ export default function DashboardPage() {
             </table>
           )}
         </div>
+
+        {/* Pagination */}
+        {patients.length > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-4">
+            <div className="text-sm text-slate-600">
+              Showing <span className="font-semibold">{startIndex + 1}</span> to <span className="font-semibold">{Math.min(endIndex, patients.length)}</span> of <span className="font-semibold">{patients.length}</span> patients
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <BiChevronLeft className="w-4 h-4" /> Previous
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageClick(pageNum)}
+                      className={`px-2.5 py-1 text-sm font-medium rounded-lg transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-primary-gradient text-white shadow-btn-primary'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next <BiChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}

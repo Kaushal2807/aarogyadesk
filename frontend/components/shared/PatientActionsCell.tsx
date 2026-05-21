@@ -14,6 +14,7 @@ interface PatientActionsCellProps {
   onAddWorkDone?: () => void;
   onGenerateCertificate?: () => void;
   onPrintCase?: () => void;
+  mode?: 'full' | 'print-only';
 }
 
 export default function PatientActionsCell({
@@ -24,7 +25,30 @@ export default function PatientActionsCell({
   onAddWorkDone,
   onGenerateCertificate,
   onPrintCase,
+  mode = 'full',
 }: PatientActionsCellProps) {
+  if (mode === 'print-only') {
+    return (
+      <div className="flex items-center justify-center">
+        <Dropdown
+          align="right"
+          trigger={
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border-2 border-slate-300 text-slate-500 rounded-md hover:bg-slate-500 hover:text-white transition-all cursor-pointer">
+              <BiPrinter className="w-3.5 h-3.5" /> Print
+            </span>
+          }
+        >
+          <DropdownItem icon={<BiSolidFile className="text-cyan-500" />} onClick={onPrintCase}>
+            Case Details
+          </DropdownItem>
+          <DropdownItem icon={<BiSolidAward className="text-amber-500" />} onClick={onGenerateCertificate}>
+            Certificate
+          </DropdownItem>
+        </Dropdown>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-1 flex-wrap justify-center">
       {/* Add Dropdown */}
@@ -91,22 +115,6 @@ export default function PatientActionsCell({
         </button>
       </div>
 
-      {/* Print Dropdown */}
-      <Dropdown
-        align="right"
-        trigger={
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border-2 border-slate-300 text-slate-500 rounded-md hover:bg-slate-500 hover:text-white transition-all cursor-pointer">
-            <BiPrinter className="w-3.5 h-3.5" /> Print
-          </span>
-        }
-      >
-        <DropdownItem icon={<BiSolidFile className="text-cyan-500" />} onClick={onPrintCase}>
-          Case Details
-        </DropdownItem>
-        <DropdownItem icon={<BiSolidAward className="text-amber-500" />} onClick={onGenerateCertificate}>
-          Certificate
-        </DropdownItem>
-      </Dropdown>
     </div>
   );
 }

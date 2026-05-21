@@ -22,6 +22,11 @@ export const patientService = {
     return data;
   },
 
+  generateUid: async (): Promise<string> => {
+    const { data } = await apiClient.get('/patients/generate-uid');
+    return data.patient_uid;
+  },
+
   update: async (uid: string, patient: PatientUpdate): Promise<Patient> => {
     const { data } = await apiClient.put(`/patients/${uid}`, patient);
     return data;

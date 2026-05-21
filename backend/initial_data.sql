@@ -150,36 +150,42 @@ CREATE TABLE IF NOT EXISTS prescription_items (
 -- Master Tables
 CREATE TABLE IF NOT EXISTS master_medicine (
     id INT AUTO_INCREMENT PRIMARY KEY,
+        clinic_id INT REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS master_dose (
     id INT AUTO_INCREMENT PRIMARY KEY,
+        clinic_id INT REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS master_frequency (
     id INT AUTO_INCREMENT PRIMARY KEY,
+        clinic_id INT REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS master_duration (
     id INT AUTO_INCREMENT PRIMARY KEY,
+        clinic_id INT REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS master_quantity (
     id INT AUTO_INCREMENT PRIMARY KEY,
+        clinic_id INT REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS master_notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
+        clinic_id INT REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
     name VARCHAR(200) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

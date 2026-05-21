@@ -10,6 +10,7 @@ import { Patient } from '@/types';
 import PersonalInfoCard from '@/components/patients/PersonalInfoCard';
 import PaymentInfoCard from '@/components/patients/PaymentInfoCard';
 import MedicalInfoCard from '@/components/patients/MedicalInfoCard';
+
 import Badge from '@/components/ui/Badge';
 
 export default function PatientHistoryPage() {
@@ -56,29 +57,29 @@ export default function PatientHistoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl shadow-card p-4 text-center">
-          <p className="text-xs text-slate-400 mb-1">Prescriptions</p>
-          <Badge variant="count">{prescriptionCount}</Badge>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl shadow-card p-4 text-center">
+            <p className="text-xs text-slate-400 mb-1">Prescriptions</p>
+            <Badge variant="count">{prescriptionCount}</Badge>
+          </div>
+          <div className="bg-white rounded-2xl shadow-card p-4 text-center">
+            <p className="text-xs text-slate-400 mb-1">Treatments</p>
+            <Badge variant="count">{treatmentCount}</Badge>
+          </div>
+          <div className="bg-white rounded-2xl shadow-card p-4 text-center">
+            <p className="text-xs text-slate-400 mb-1">Work Done</p>
+            <Badge variant="count">{workDoneCount}</Badge>
+          </div>
         </div>
-        <div className="bg-white rounded-2xl shadow-card p-4 text-center">
-          <p className="text-xs text-slate-400 mb-1">Treatments</p>
-          <Badge variant="count">{treatmentCount}</Badge>
-        </div>
-        <div className="bg-white rounded-2xl shadow-card p-4 text-center">
-          <p className="text-xs text-slate-400 mb-1">Work Done</p>
-          <Badge variant="count">{workDoneCount}</Badge>
-        </div>
-      </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PersonalInfoCard patient={patient} />
-        <PaymentInfoCard patient={patient} />
-      </div>
+        {/* Info Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PersonalInfoCard patient={patient} />
+          <PaymentInfoCard patient={patient} />
+        </div>
 
-      <MedicalInfoCard patient={patient} />
+        <MedicalInfoCard patient={patient} />
     </div>
   );
 }

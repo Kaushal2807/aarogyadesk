@@ -17,6 +17,12 @@ export interface LoginResponse {
   user: User;
 }
 
+// Session expiry in milliseconds (24 hours)
+const SESSION_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_TIMESTAMP_KEY = 'session_timestamp';
+const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
+
 export const auth = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
     const response = await apiClient.post('/auth/login', {
@@ -25,8 +31,10 @@ export const auth = {
     });
 
     if (response.data.access_token) {
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem(TOKEN_KEY, response.data.access_token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
+      // Store timestamp when token was set for 24-hour expiry
+      localStorage.setItem(SESSION_TIMESTAMP_KEY, Date.now().toString());
     }
 
     return response.data;
@@ -50,24 +58,44 @@ export const auth = {
   },
 
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(SESSION_TIMESTAMP_KEY);
   },
 
   getCurrentUser: (): User | null => {
     if (typeof window === 'undefined') return null;
-    const user = localStorage.getItem('user');
+    if (!auth.isAuthenticated()) return null;
+    const user = localStorage.getItem(USER_KEY);
     return user ? JSON.parse(user) : null;
   },
 
   getToken: (): string | null => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    if (!auth.isAuthenticated()) return null;
+    return localStorage.getItem(TOKEN_KEY);
+  },
+
+  // Check if session is still valid (not expired)
+  isSessionValid: (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const timestamp = localStorage.getItem(SESSION_TIMESTAMP_KEY);
+    if (!timestamp) return false;
+    const currentTime = Date.now();
+    const sessionTime = parseInt(timestamp, 10);
+    return currentTime - sessionTime < SESSION_EXPIRY_TIME;
   },
 
   isAuthenticated: (): boolean => {
     if (typeof window === 'undefined') return false;
-    return !!localStorage.getItem('token');
+    const hasToken = !!localStorage.getItem(TOKEN_KEY);
+    if (!hasToken) return false;
+    // Check if session is still valid
+    if (!auth.isSessionValid()) {
+      auth.logout();
+      return false;
+    }
+    return true;
   },
 
   getMe: async (): Promise<User> => {

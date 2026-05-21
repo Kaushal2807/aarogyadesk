@@ -25,7 +25,7 @@ async def add_medicine(data: MedicineCreate, db: Session = Depends(get_db), clin
 
 @router.put("/{medicine_id}", response_model=MedicineResponse)
 async def edit_medicine(medicine_id: int, data: MedicineUpdate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
-    result = update_medicine(db, medicine_id, clinic_id, data)
+    result = update_medicine(db, clinic_id, medicine_id, data)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medicine not found")
     return result

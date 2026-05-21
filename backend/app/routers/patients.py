@@ -8,6 +8,7 @@ from app.services.patient_service import (
     get_patient_by_uid, get_patients, get_patient_count, create_patient,
     update_patient, delete_patient
 )
+from app.services.patient_service import generate_patient_uid
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 
@@ -35,6 +36,15 @@ async def count_patients(
     partial = get_patient_count(db, clinic_id, "partial")
     pending = get_patient_count(db, clinic_id, "pending")
     return {"total": total, "paid": paid, "partial": partial, "pending": pending}
+
+
+@router.get("/generate-uid")
+async def generate_uid(
+    db: Session = Depends(get_db),
+    clinic_id: int = Depends(get_clinic_id),
+):
+    """Generate a new patient UID for the clinic without creating a patient."""
+    return {"patient_uid": generate_patient_uid(db, clinic_id)}
 
 
 @router.post("", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)

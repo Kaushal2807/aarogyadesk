@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface ToothChartData {
   upperRight: string;
@@ -32,17 +32,20 @@ export default function ToothChart({ onChange, initialValues }: ToothChartProps)
         set.add(tooth);
       }
       next[quadrant] = set;
-      if (onChange) {
-        onChange({
-          upperRight: [...next.ur].join(','),
-          upperLeft: [...next.ul].join(','),
-          lowerRight: [...next.lr].join(','),
-          lowerLeft: [...next.ll].join(','),
-        });
-      }
       return next;
     });
   }, [onChange]);
+
+  // call onChange after teeth state updates (in effect), not during render
+  useEffect(() => {
+    if (!onChange) return;
+    onChange({
+      upperRight: [...teeth.ur].join(','),
+      upperLeft: [...teeth.ul].join(','),
+      lowerRight: [...teeth.lr].join(','),
+      lowerLeft: [...teeth.ll].join(','),
+    });
+  }, [teeth, onChange]);
 
   const Quadrant = ({ label, quad, range }: { label: string; quad: string; range: number[] }) => (
     <div className="text-center">

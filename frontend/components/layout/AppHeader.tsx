@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { auth, type User } from '@/lib/auth';
 import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle } from 'react-icons/bi';
 
 const navLinks = [
@@ -26,7 +26,12 @@ export default function AppHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const user = auth.getCurrentUser();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Set user only on client-side after hydration to avoid SSR mismatch
+    setUser(auth.getCurrentUser());
+  }, []);
 
   const handleLogout = () => {
     auth.logout();
@@ -126,7 +131,7 @@ export default function AppHeader() {
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors shadow-md"
             >
               <BiLogOut className="w-4 h-4" />
               Logout
@@ -183,7 +188,7 @@ export default function AppHeader() {
               </div>
               <button
                 onClick={() => { handleLogout(); closeMobile(); }}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors shadow-md w-full"
               >
                 <BiLogOut className="w-4 h-4" />
                 Logout

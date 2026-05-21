@@ -55,7 +55,7 @@ def delete_work_done_type(db: Session, clinic_id: int, work_id: int):
 # ── Patient Work Done ──
 
 def get_patient_work_done(db: Session, clinic_id: int, skip: int = 0, limit: int = 100):
-    return (
+    items = (
         db.query(PatientWorkDone)
         .filter(PatientWorkDone.clinic_id == clinic_id)
         .order_by(PatientWorkDone.created_at.desc())
@@ -63,10 +63,13 @@ def get_patient_work_done(db: Session, clinic_id: int, skip: int = 0, limit: int
         .limit(limit)
         .all()
     )
+    for it in items:
+        _enrich_patient_work_done(db, it)
+    return items
 
 
 def get_patient_work_done_by_uid(db: Session, clinic_id: int, patient_uid: str):
-    return (
+    items = (
         db.query(PatientWorkDone)
         .filter(
             PatientWorkDone.clinic_id == clinic_id,
@@ -75,6 +78,16 @@ def get_patient_work_done_by_uid(db: Session, clinic_id: int, patient_uid: str):
         .order_by(PatientWorkDone.work_date.desc())
         .all()
     )
+    for it in items:
+        _enrich_patient_work_done(db, it)
+    return items
+
+
+def _enrich_patient_work_done(db: Session, record: PatientWorkDone):
+    if record.work_done_id:
+        work = db.query(WorkDone).filter(WorkDone.id == record.work_done_id, WorkDone.clinic_id == record.clinic_id).first()
+        record.work_name = work.work_name if work else None
+    return record
 
 
 def get_single_patient_work_done(db: Session, clinic_id: int, work_id: int):
@@ -90,6 +103,7 @@ def create_patient_work_done(db: Session, clinic_id: int, data: PatientWorkDoneC
     db.add(work)
     db.commit()
     db.refresh(work)
+    _enrich_patient_work_done(db, work)
     return work
 
 
@@ -102,6 +116,7 @@ def update_patient_work_done(db: Session, clinic_id: int, work_id: int, data: Pa
     db.add(work)
     db.commit()
     db.refresh(work)
+    _enrich_patient_work_done(db, work)
     return work
 
 

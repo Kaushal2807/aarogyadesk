@@ -2,12 +2,24 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/auth';
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/login');
+    // If authenticated, redirect to dashboard
+    if (auth.isAuthenticated()) {
+      const user = auth.getCurrentUser();
+      if (user?.user_type === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    } else {
+      // Otherwise redirect to login
+      router.push('/login');
+    }
   }, [router]);
 
   return (

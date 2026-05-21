@@ -19,5 +19,5 @@ class Expense(CreatedOnlyModel):
     title = Column(String(200), nullable=False)
     description = Column(Text)
     amount = Column(Numeric(10, 2), nullable=False)
-    payment_mode = Column(Enum("Cash", "UPI", name="expense_payment_mode_enum"), default="Cash")
+    payment_mode = Column(Enum("Cash", "UPI", "Cheque", name="expense_payment_mode_enum"), default="Cash")
     expense_date = Column(Date)

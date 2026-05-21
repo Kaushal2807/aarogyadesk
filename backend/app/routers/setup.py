@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import text, inspect
 from sqlalchemy.orm import Session
 from app.db.database import engine, SessionLocal
+from app.core.security import hash_password
 
 router = APIRouter(tags=["setup"])
 
@@ -94,31 +95,37 @@ TABLES_SQL = [
     )""",
     """CREATE TABLE IF NOT EXISTS master_medicine (
         id SERIAL PRIMARY KEY,
+        clinic_id INTEGER REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
         name VARCHAR(200) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
     """CREATE TABLE IF NOT EXISTS master_dose (
         id SERIAL PRIMARY KEY,
+        clinic_id INTEGER REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
     """CREATE TABLE IF NOT EXISTS master_frequency (
         id SERIAL PRIMARY KEY,
+        clinic_id INTEGER REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
     """CREATE TABLE IF NOT EXISTS master_duration (
         id SERIAL PRIMARY KEY,
+        clinic_id INTEGER REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
     """CREATE TABLE IF NOT EXISTS master_quantity (
         id SERIAL PRIMARY KEY,
+        clinic_id INTEGER REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
     """CREATE TABLE IF NOT EXISTS master_notes (
         id SERIAL PRIMARY KEY,
+        clinic_id INTEGER REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
         name VARCHAR(200) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
@@ -237,6 +244,20 @@ TABLES_SQL = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
+    """CREATE TABLE IF NOT EXISTS master_diagnosis (
+        id SERIAL PRIMARY KEY,
+        clinic_id INTEGER NOT NULL REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
+        diagnosis_name VARCHAR(300) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""",
+    """CREATE TABLE IF NOT EXISTS master_treatment_option (
+        id SERIAL PRIMARY KEY,
+        clinic_id INTEGER NOT NULL REFERENCES clinic_data(clinic_id) ON DELETE CASCADE,
+        treatment_name VARCHAR(300) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )""",
 ]
 
 SEED_MASTER_SQL = [
@@ -333,7 +354,7 @@ async def run_setup():
         db.commit()
 
         # Insert admin user
-        admin_password_hash = get_md5("admin123")
+        admin_password_hash = hash_password("admin123")
         db.execute(
             text(SEED_ADMIN_SQL),
             {"password": admin_password_hash}

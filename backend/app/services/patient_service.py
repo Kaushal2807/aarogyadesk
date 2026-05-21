@@ -36,9 +36,27 @@ def generate_patient_uid(db: Session, clinic_id: int) -> str:
     clinic = db.query(ClinicData).filter(ClinicData.clinic_id == clinic_id).first()
     if not clinic:
         return "GEN-1"
+    
     prefix = clinic.clinic_code
-    last = db.query(func.max(Patient.id)).filter(Patient.clinic_id == clinic_id).scalar() or 0
-    return f"{prefix}-{last + 101}"
+    
+    # Get all patients for this clinic
+    patients = db.query(Patient).filter(Patient.clinic_id == clinic_id).all()
+    
+    # Extract numeric parts and find the max
+    max_number = 0
+    for patient in patients:
+        try:
+            # Split by '-' and get the last part (numeric)
+            parts = patient.patient_uid.split('-')
+            if len(parts) >= 2:
+                num = int(parts[-1])
+                max_number = max(max_number, num)
+        except (ValueError, IndexError):
+            pass
+    
+    # Generate next ID (increment by 1)
+    next_number = max_number + 1
+    return f"{prefix}-{next_number}"
 
 
 def create_patient(db: Session, clinic_id: int, patient: PatientCreate):

@@ -64,26 +64,46 @@ export default function AdminPage() {
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    
+    // Validate required fields
+    const clinic_name = form.get('clinic_name')?.toString().trim();
+    const clinic_code = form.get('clinic_code')?.toString().trim();
+    const phone = form.get('phone')?.toString().trim();
+    const email = form.get('email')?.toString().trim();
+    const address = form.get('address')?.toString().trim();
+    const plan_type = form.get('plan_type')?.toString().trim();
+    const plan_amount = form.get('plan_amount')?.toString().trim();
+    const payment_status = form.get('payment_status')?.toString().trim() || 'Paid';
+    const payment_method = form.get('payment_method')?.toString().trim();
+    const transaction_reference = form.get('transaction_reference')?.toString().trim();
+
+    if (!clinic_name || !clinic_code || !phone || !email || !address || !plan_type || !plan_amount) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
     try {
       setSubmitting(true);
+      setError(null);
+      
       const { data: clinic } = await apiClient.post('/clinics', {
-        clinic_name: form.get('clinic_name'),
-        clinic_code: form.get('clinic_code'),
-        phone: form.get('phone'),
-        email: form.get('email'),
-        address: form.get('address'),
+        clinic_name,
+        clinic_code,
+        phone,
+        email,
+        address,
+        status: 'Active',
       });
 
-      const plan = form.get('plan_type') as string;
-      const { start, end } = getPlanDates(plan);
+      const { start, end } = getPlanDates(plan_type);
 
       await apiClient.post('/subscriptions', {
         clinic_id: clinic.clinic_id,
-        plan_type: plan,
-        plan_amount: Number(form.get('plan_amount')),
-        payment_status: form.get('payment_status') || 'Paid',
-        payment_method: form.get('payment_method') || null,
-        transaction_reference: form.get('transaction_reference') || null,
+        plan_type: plan_type as "1 Month" | "6 Months" | "1 Year",
+        plan_amount: Number(plan_amount),
+        payment_status: payment_status as "Paid" | "Pending" | "Partial",
+        payment_method: payment_method && payment_method !== '' ? (payment_method as "Cash" | "UPI" | "Cheque") : null,
+        transaction_reference: transaction_reference || null,
         start_date: start,
         end_date: end,
       });
@@ -91,7 +111,8 @@ export default function AdminPage() {
       setShowModal(false);
       fetchClinics();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add clinic');
+      console.error('Error adding clinic:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to add clinic');
     } finally {
       setSubmitting(false);
     }
@@ -230,11 +251,13 @@ export default function AdminPage() {
               <FormSelect
                 label="Plan Type"
                 name="plan_type"
+                required
                 options={[
                   { value: '1 Month', label: '1 Month' },
                   { value: '6 Months', label: '6 Months' },
                   { value: '1 Year', label: '1 Year' },
                 ]}
+                defaultValue="1 Month"
               />
               <FormInput label="Plan Amount" name="plan_amount" type="number" required defaultValue="1500" />
               <FormSelect
@@ -245,14 +268,18 @@ export default function AdminPage() {
                   { value: 'UPI', label: 'UPI' },
                   { value: 'Cheque', label: 'Cheque' },
                 ]}
+                placeholder="Select payment method"
+                defaultValue="Cash"
               />
               <FormSelect
                 label="Payment Status"
                 name="payment_status"
+                required
                 options={[
                   { value: 'Paid', label: 'Paid' },
                   { value: 'Pending', label: 'Pending' },
                 ]}
+                defaultValue="Paid"
               />
             </div>
             <FormInput label="Transaction Reference" name="transaction_reference" placeholder="Optional" />

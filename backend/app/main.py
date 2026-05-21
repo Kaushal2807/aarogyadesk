@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     setup,
-    auth, patients, appointments, treatments, prescriptions, master,
+    auth, patients, appointments, treatments, prescriptions, master, master_treatment,
     expenses, medicine, clinics, subscriptions, doctors,
     templates, support, work_done, users, reports,
 )
@@ -18,6 +18,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
+        "http://localhost:3002",
         "http://10.123.8.131:3000",
         "http://10.123.8.131:8000",
         "https://aarogyadesk.vercel.app",
@@ -39,6 +40,7 @@ app.include_router(appointments.router)
 app.include_router(treatments.router)
 app.include_router(prescriptions.router)
 app.include_router(master.router)
+app.include_router(master_treatment.router)
 app.include_router(expenses.router)
 app.include_router(medicine.router)
 app.include_router(clinics.router)

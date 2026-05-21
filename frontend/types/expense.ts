@@ -7,7 +7,7 @@ export interface Expense {
   title: string;
   description?: string;
   amount: number;
-  payment_mode: 'Cash' | 'UPI';
+  payment_mode: 'Cash' | 'UPI' | 'Cheque';
   expense_date?: string;
   created_at: string;
   category_name?: string;
@@ -20,7 +20,7 @@ export interface ExpenseCreate {
   title: string;
   description?: string;
   amount: number;
-  payment_mode?: 'Cash' | 'UPI';
+  payment_mode?: 'Cash' | 'UPI' | 'Cheque';
   expense_date?: string;
 }
 
@@ -31,7 +31,7 @@ export interface ExpenseUpdate {
   title?: string;
   description?: string;
   amount?: number;
-  payment_mode?: 'Cash' | 'UPI';
+  payment_mode?: 'Cash' | 'UPI' | 'Cheque';
   expense_date?: string;
 }
 

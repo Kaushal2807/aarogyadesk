@@ -29,7 +29,7 @@ class ExpenseCreate(BaseModel):
     title: str
     description: Optional[str] = None
     amount: float
-    payment_mode: Literal["Cash", "UPI"] = "Cash"
+    payment_mode: Literal["Cash", "UPI", "Cheque"] = "Cash"
     expense_date: Optional[date] = None
 
 
@@ -40,7 +40,7 @@ class ExpenseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     amount: Optional[float] = None
-    payment_mode: Optional[Literal["Cash", "UPI"]] = None
+    payment_mode: Optional[Literal["Cash", "UPI", "Cheque"]] = None
     expense_date: Optional[date] = None
 
 
@@ -48,6 +48,7 @@ class ExpenseResponse(BaseModel):
     id: int
     clinic_id: int
     category_id: Optional[int] = None
+    category_name: Optional[str] = None
     expense_month: Optional[int] = None
     expense_year: Optional[int] = None
     title: str

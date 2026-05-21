@@ -4,8 +4,9 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { treatmentService } from '@/lib/services/treatments';
 import { PatientTreatment } from '@/types';
-import TreatmentCard from '@/components/patients/TreatmentCard';
+import TreatmentHistoryCard from '@/components/patients/TreatmentHistoryCard';
 import EmptyState from '@/components/ui/EmptyState';
+
 
 export default function PatientTreatmentsPage() {
   const params = useParams();
@@ -36,14 +37,30 @@ export default function PatientTreatmentsPage() {
     );
   }
 
-  if (treatments.length === 0) {
-    return <EmptyState message="No treatment records found for this patient" />;
-  }
-
-  return (
-    <div className="space-y-4">
+  return treatments.length === 0 ? (
+    <EmptyState message="No treatment records found for this patient" />
+  ) : (
+    <div className="space-y-6">
       {treatments.map((t) => (
-        <TreatmentCard key={t.id} treatment={t} />
+        <TreatmentHistoryCard
+          key={t.id}
+          treatment={t}
+          uid={uid}
+          onDeleted={() => {
+            // refetch after delete
+            setLoading(true);
+            (async () => {
+              try {
+                const data = await treatmentService.getByPatient(uid);
+                setTreatments(data);
+              } catch {
+                setTreatments([]);
+              } finally {
+                setLoading(false);
+              }
+            })();
+          }}
+        />
       ))}
     </div>
   );

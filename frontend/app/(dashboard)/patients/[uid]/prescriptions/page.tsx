@@ -36,11 +36,9 @@ export default function PatientPrescriptionsPage() {
     );
   }
 
-  if (prescriptions.length === 0) {
-    return <EmptyState message="No prescriptions found for this patient" />;
-  }
-
-  return (
+  return prescriptions.length === 0 ? (
+    <EmptyState message="No prescriptions found for this patient" />
+  ) : (
     <div className="space-y-4">
       {prescriptions.map((rx) => (
         <PrescriptionCard key={rx.id} prescription={rx} />

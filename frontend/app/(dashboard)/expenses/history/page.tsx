@@ -14,6 +14,7 @@ import { Expense, ExpenseCategory } from '@/types';
 const PAYMENT_MODE_OPTIONS = [
   { value: 'Cash', label: 'Cash' },
   { value: 'UPI', label: 'UPI' },
+  { value: 'Cheque', label: 'Cheque' },
 ];
 
 export default function ExpenseHistoryPage() {

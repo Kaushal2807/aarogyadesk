@@ -26,7 +26,7 @@ async def add_category(data: ExpenseCategoryCreate, db: Session = Depends(get_db
 
 @router.put("/expense-categories/{category_id}", response_model=ExpenseCategoryResponse)
 async def edit_category(category_id: int, data: ExpenseCategoryUpdate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
-    result = update_category(db, category_id, clinic_id, data)
+    result = update_category(db, clinic_id, category_id, data)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
     return result
@@ -34,7 +34,7 @@ async def edit_category(category_id: int, data: ExpenseCategoryUpdate, db: Sessi
 
 @router.delete("/expense-categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_category(category_id: int, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
-    if not delete_category(db, category_id, clinic_id):
+    if not delete_category(db, clinic_id, category_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
 
@@ -59,7 +59,7 @@ async def add_expense(data: ExpenseCreate, db: Session = Depends(get_db), clinic
 
 @router.put("/expenses/{expense_id}", response_model=ExpenseResponse)
 async def edit_expense(expense_id: int, data: ExpenseUpdate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
-    result = update_expense(db, expense_id, clinic_id, data)
+    result = update_expense(db, clinic_id, expense_id, data)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
     return result
@@ -67,5 +67,5 @@ async def edit_expense(expense_id: int, data: ExpenseUpdate, db: Session = Depen
 
 @router.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_expense(expense_id: int, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
-    if not delete_expense(db, expense_id, clinic_id):
+    if not delete_expense(db, clinic_id, expense_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")

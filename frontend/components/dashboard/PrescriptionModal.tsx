@@ -13,8 +13,9 @@ interface PrescriptionModalProps {
   onClose: () => void;
   patientUid?: string;
   patientName?: string;
-  onSave?: () => void;
+  onSave?: (prescription?: any) => void;
 }
+
 
 export default function PrescriptionModal({ isOpen, onClose, patientUid, patientName, onSave }: PrescriptionModalProps) {
   const [prescriptionDate, setPrescriptionDate] = useState(new Date().toISOString().split('T')[0]);
@@ -76,7 +77,7 @@ export default function PrescriptionModal({ isOpen, onClose, patientUid, patient
     if (!patientUid || !patientName || rows.length === 0) return;
     try {
       setSaving(true);
-      await prescriptionService.create({
+      const res = await prescriptionService.create({
         patient_uid: patientUid,
         patient_name: patientName,
         prescription_date: prescriptionDate,
@@ -89,10 +90,14 @@ export default function PrescriptionModal({ isOpen, onClose, patientUid, patient
           instruction: row.instruction || undefined,
         })),
       });
-      onSave?.();
+      onSave?.(res);
       onClose();
       if (print) {
-        setTimeout(() => window.print(), 300);
+        const id = res?.id;
+        if (id && patientUid) {
+          const url = `/patients/${patientUid}/prescriptions/${id}/print`;
+          window.open(url, '_blank');
+        }
       }
     } catch (err) {
       console.error('Failed to save prescription:', err);
@@ -102,7 +107,7 @@ export default function PrescriptionModal({ isOpen, onClose, patientUid, patient
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Prescription" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Prescription" size="xl">
       <div className="py-2">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <FormInput label="Patient ID" value={patientUid || ''} readOnly className="bg-slate-50" />

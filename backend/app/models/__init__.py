@@ -9,6 +9,7 @@ from app.models.prescription_item import PrescriptionItem
 from app.models.master import (
     MasterMedicine, MasterDose, MasterFrequency, MasterDuration, MasterQuantity, MasterNotes
 )
+from app.models.master_treatment import MasterDiagnosis, MasterTreatmentPlan
 from app.models.work_done import WorkDone, PatientWorkDone
 from app.models.expense import ExpenseCategory, Expense
 from app.models.medicine import Medicine

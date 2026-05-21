@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { BiPlusCircle } from 'react-icons/bi';
 import SearchInput from '@/components/ui/SearchInput';
 import Button from '@/components/ui/Button';
@@ -9,9 +10,12 @@ import FormInput from '@/components/forms/FormInput';
 import FormSelect from '@/components/forms/FormSelect';
 import EmptyState from '@/components/ui/EmptyState';
 import { appointmentService } from '@/lib/services/appointments';
+import { patientService } from '@/lib/services/patients';
 import { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types';
+import { PatientCreate } from '@/types';
 
 export default function AppointmentsPage() {
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,6 +23,8 @@ export default function AppointmentsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<Appointment | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [appointmentToConfirm, setAppointmentToConfirm] = useState<Appointment | null>(null);
   const [formData, setFormData] = useState({
     patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '',
   });
@@ -40,12 +46,16 @@ export default function AppointmentsPage() {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  const filteredAppointments = search
-    ? appointments.filter(a => a.patient_name.toLowerCase().includes(search.toLowerCase()) || (a.contact_number || '').includes(search))
-    : appointments;
-
   const today = new Date().toISOString().split('T')[0];
-  const todayCount = appointments.filter((a) => a.status === 'pending' && a.appointment_date === today).length;
+
+  // Filter to show only today's appointments
+  const todayAppointments = appointments.filter(a => a.appointment_date === today);
+
+  const filteredAppointments = search
+    ? todayAppointments.filter(a => a.patient_name.toLowerCase().includes(search.toLowerCase()) || (a.contact_number || '').includes(search))
+    : todayAppointments;
+
+  const todayCount = todayAppointments.filter((a) => a.status === 'pending').length;
 
   const formatTime = (time: string) => {
     const [h, m] = time.split(':');
@@ -65,6 +75,43 @@ export default function AppointmentsPage() {
     }
   };
 
+  const handleAddPatient = (apt: Appointment) => {
+    setAppointmentToConfirm(apt);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmAddPatient = async () => {
+    if (!appointmentToConfirm) return;
+    try {
+      // Mark appointment as completed
+      await appointmentService.updateStatus(appointmentToConfirm.id, 'completed');
+      
+      // Create patient from appointment data
+      const patientData: PatientCreate = {
+        name: appointmentToConfirm.patient_name,
+        age: appointmentToConfirm.age || undefined,
+        contact_number: appointmentToConfirm.contact_number || undefined,
+        address: appointmentToConfirm.address || undefined,
+        date_of_visit: appointmentToConfirm.appointment_date,
+        payment_status: 'pending',
+      };
+      const newPatient = await patientService.create(patientData);
+      
+      // Show success message and navigate
+      setError(null);
+      setShowConfirmModal(false);
+      setAppointmentToConfirm(null);
+      
+      // Refresh appointments and navigate to dashboard
+      fetchAppointments();
+      router.push(`/dashboard?patientId=${newPatient.id}&highlight=true`);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to add patient');
+      setShowConfirmModal(false);
+      setAppointmentToConfirm(null);
+    }
+  };
+
   const openReschedule = (apt: Appointment) => {
     setRescheduleData(apt);
     setFormData({
@@ -79,17 +126,18 @@ export default function AppointmentsPage() {
     setShowRescheduleModal(true);
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent<any>) => {
     e.preventDefault();
     try {
+      const data = e.formData || formData;
       const createData: AppointmentCreate = {
-        patient_name: formData.patient_name,
-        age: formData.age ? Number(formData.age) : undefined,
-        contact_number: formData.contact_number || undefined,
-        appointment_date: formData.appointment_date,
-        appointment_time: formData.appointment_time,
-        booking_type: formData.booking_type as 'walk-in' | 'call',
-        address: formData.address || undefined,
+        patient_name: data.patient_name,
+        age: data.age ? Number(data.age) : undefined,
+        contact_number: data.contact_number || undefined,
+        appointment_date: data.appointment_date,
+        appointment_time: data.appointment_time,
+        booking_type: data.booking_type as 'walk-in' | 'call',
+        address: data.address || undefined,
       };
       await appointmentService.create(createData);
       setShowAddModal(false);
@@ -100,18 +148,19 @@ export default function AppointmentsPage() {
     }
   };
 
-  const handleReschedule = async (e: React.FormEvent) => {
+  const handleReschedule = async (e: React.FormEvent<any>) => {
     e.preventDefault();
     if (!rescheduleData) return;
     try {
+      const data = e.formData || formData;
       const updateData: AppointmentUpdate = {
-        patient_name: formData.patient_name,
-        age: formData.age ? Number(formData.age) : undefined,
-        contact_number: formData.contact_number || undefined,
-        appointment_date: formData.appointment_date,
-        appointment_time: formData.appointment_time,
-        booking_type: formData.booking_type as 'walk-in' | 'call',
-        address: formData.address || undefined,
+        patient_name: data.patient_name,
+        age: data.age ? Number(data.age) : undefined,
+        contact_number: data.contact_number || undefined,
+        appointment_date: data.appointment_date,
+        appointment_time: data.appointment_time,
+        booking_type: data.booking_type as 'walk-in' | 'call',
+        address: data.address || undefined,
       };
       await appointmentService.update(rescheduleData.id, updateData);
       setShowRescheduleModal(false);
@@ -127,21 +176,47 @@ export default function AppointmentsPage() {
 
   const AppointmentForm = ({ onSubmit, submitLabel, initialData }: { onSubmit: (e: React.FormEvent) => void; submitLabel: string; initialData?: typeof formData }) => {
     const [data, setData] = useState(initialData || resetForm());
+    
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      // Update parent formData with current form data
+      setFormData(data);
+      // Create a synthetic event with the form data attached
+      const syntheticEvent = {
+        ...e,
+        preventDefault: () => e.preventDefault(),
+        formData: data,
+      } as any;
+      onSubmit(syntheticEvent);
+    };
+
     return (
-      <form onSubmit={(e) => { onSubmit(e); }}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormInput label="Patient Name" value={data.patient_name} onChange={(e) => setData({ ...data, patient_name: e.target.value })} required />
-          <FormInput label="Age" value={data.age} onChange={(e) => setData({ ...data, age: e.target.value })} type="number" />
-          <FormInput label="Contact Number" value={data.contact_number} onChange={(e) => setData({ ...data, contact_number: e.target.value })} required />
-          <FormInput label="Date" value={data.appointment_date} onChange={(e) => setData({ ...data, appointment_date: e.target.value })} type="date" required />
-          <FormInput label="Time" value={data.appointment_time} onChange={(e) => setData({ ...data, appointment_time: e.target.value })} type="time" required />
-          <FormSelect label="Booking Type" value={data.booking_type} onChange={(e) => setData({ ...data, booking_type: e.target.value })} options={[{ value: 'walk-in', label: 'Walk-in' }, { value: 'call', label: 'On Call' }]} required />
-          <div className="md:col-span-3">
-            <FormInput label="Address" value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} />
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
+          <div>
+            <FormInput label="Patient Name" value={data.patient_name} onChange={(e) => setData({ ...data, patient_name: e.target.value })} required placeholder="Enter patient name" />
+          </div>
+          <div>
+            <FormInput label="Age" value={data.age} onChange={(e) => setData({ ...data, age: e.target.value })} type="number" placeholder="Enter age" required />
+          </div>
+          <div>
+            <FormInput label="Contact Number" value={data.contact_number} onChange={(e) => setData({ ...data, contact_number: e.target.value })} required placeholder="Enter contact number" />
+          </div>
+          <div>
+            <FormInput label="Date" value={data.appointment_date} onChange={(e) => setData({ ...data, appointment_date: e.target.value })} type="date" required min={today} />
+          </div>
+          <div>
+            <FormInput label="Time" value={data.appointment_time} onChange={(e) => setData({ ...data, appointment_time: e.target.value })} type="time" required />
+          </div>
+          <div>
+            <FormSelect label="Booking Type" value={data.booking_type} onChange={(e) => setData({ ...data, booking_type: e.target.value })} options={[{ value: 'walk-in', label: 'Walk-in' }, { value: 'call', label: 'On Call' }]} required />
+          </div>
+          <div className="md:col-span-2">
+            <FormInput label="Address" value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} placeholder="Enter address" />
           </div>
         </div>
-        <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
-          <Button type="submit">{submitLabel}</Button>
+        <div className="flex justify-center gap-3 pt-6 border-t border-slate-200 mt-6">
+          <Button type="submit" className="px-6 py-2">{submitLabel}</Button>
         </div>
       </form>
     );
@@ -223,7 +298,7 @@ export default function AppointmentsPage() {
                         </button>
                         <button
                           disabled={apt.status === 'completed'}
-                          onClick={() => toggleStatus(apt.id, true)}
+                          onClick={() => handleAddPatient(apt)}
                           className="px-2 py-1 text-xs font-medium bg-emerald-500 text-white rounded-md hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
                           + Patient
@@ -237,6 +312,39 @@ export default function AppointmentsPage() {
           )}
         </div>
       </div>
+
+      {/* Confirm Add Patient Modal */}
+      <Modal isOpen={showConfirmModal} onClose={() => {
+        setShowConfirmModal(false);
+        setAppointmentToConfirm(null);
+      }} title="Confirm Add Patient">
+        <div className="space-y-4">
+          <p className="text-slate-600">
+            Are you sure you want to add <span className="font-semibold">{appointmentToConfirm?.patient_name}</span> to the patient table?
+          </p>
+          <p className="text-sm text-slate-500">
+            • This appointment will be marked as completed
+            • A new patient record will be created
+          </p>
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+            <button
+              onClick={() => {
+                setShowConfirmModal(false);
+                setAppointmentToConfirm(null);
+              }}
+              className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmAddPatient}
+              className="px-4 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-all"
+            >
+              Yes, Add Patient
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Add Modal */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Appointment">

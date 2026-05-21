@@ -64,6 +64,7 @@ def get_expenses(
     year: int = None,
     category_id: int = None,
 ):
+    from sqlalchemy.orm import joinedload
     query = db.query(Expense).filter(Expense.clinic_id == clinic_id)
     if month is not None:
         query = query.filter(Expense.expense_month == month)
@@ -71,7 +72,17 @@ def get_expenses(
         query = query.filter(Expense.expense_year == year)
     if category_id is not None:
         query = query.filter(Expense.category_id == category_id)
-    return query.order_by(Expense.created_at.desc()).offset(skip).limit(limit).all()
+    
+    expenses = query.order_by(Expense.created_at.desc()).offset(skip).limit(limit).all()
+    
+    # Attach category_name to each expense
+    for expense in expenses:
+        if expense.category_id:
+            cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == expense.category_id).first()
+            if cat:
+                expense.category_name = cat.category_name
+    
+    return expenses
 
 
 def get_expense(db: Session, clinic_id: int, expense_id: int):
@@ -87,6 +98,13 @@ def create_expense(db: Session, clinic_id: int, data: ExpenseCreate):
     db.add(expense)
     db.commit()
     db.refresh(expense)
+    
+    # Attach category_name if category_id exists
+    if expense.category_id:
+        cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == expense.category_id).first()
+        if cat:
+            expense.category_name = cat.category_name
+    
     return expense
 
 
@@ -99,6 +117,13 @@ def update_expense(db: Session, clinic_id: int, expense_id: int, data: ExpenseUp
     db.add(expense)
     db.commit()
     db.refresh(expense)
+    
+    # Attach category_name if category_id exists
+    if expense.category_id:
+        cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == expense.category_id).first()
+        if cat:
+            expense.category_name = cat.category_name
+    
     return expense
 
 
