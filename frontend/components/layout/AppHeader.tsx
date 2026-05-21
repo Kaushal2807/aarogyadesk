@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { auth, type User } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle } from 'react-icons/bi';
 
 const navLinks = [
@@ -24,10 +24,9 @@ const templateLinks = [
 export default function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<ReturnType<typeof auth.getCurrentUser>>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ReturnType<typeof auth.getCurrentUser>>(null);
 
   useEffect(() => {
     // Set user only on client-side after hydration to avoid SSR mismatch
