@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/prescriptions", tags=["prescriptions"])
 
 
 @router.get("", response_model=list[PrescriptionResponse])
-async def list_prescriptions(
+def list_prescriptions(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
@@ -22,7 +22,7 @@ async def list_prescriptions(
 
 
 @router.get("/patient/{uid}", response_model=list[PrescriptionResponse])
-async def list_prescriptions_by_patient(
+def list_prescriptions_by_patient(
     uid: str,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -31,7 +31,7 @@ async def list_prescriptions_by_patient(
 
 
 @router.get("/{prescription_id}", response_model=PrescriptionResponse)
-async def get_prescription_detail(
+def get_prescription_detail(
     prescription_id: int,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -43,7 +43,7 @@ async def get_prescription_detail(
 
 
 @router.post("", response_model=PrescriptionResponse, status_code=status.HTTP_201_CREATED)
-async def create_new_prescription(
+def create_new_prescription(
     prescription: PrescriptionCreate,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -52,7 +52,7 @@ async def create_new_prescription(
 
 
 @router.delete("/{prescription_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_prescription_record(
+def delete_prescription_record(
     prescription_id: int,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),

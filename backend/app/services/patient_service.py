@@ -32,6 +32,42 @@ def get_patient_count(db: Session, clinic_id: int, payment_status: str = None):
     return query.scalar()
 
 
+def get_patient_counts_by_status(db: Session, clinic_id: int):
+    results = db.query(
+        Patient.payment_status,
+        func.count(Patient.id)
+    ).filter(
+        Patient.clinic_id == clinic_id
+    ).group_by(
+        Patient.payment_status
+    ).all()
+    
+    counts = {
+        "total": 0,
+        "paid": 0,
+        "partial": 0,
+        "pending": 0
+    }
+    
+    for status_val, count in results:
+        counts["total"] += count
+        if not status_val:
+            counts["pending"] += count
+            continue
+            
+        status_lower = status_val.lower().strip()
+        if status_lower == "paid":
+            counts["paid"] += count
+        elif status_lower in ["partial", "partial payment"]:
+            counts["partial"] += count
+        elif status_lower in ["pending", "unpaid"]:
+            counts["pending"] += count
+        else:
+            counts["pending"] += count
+            
+    return counts
+
+
 def generate_patient_uid(db: Session, clinic_id: int) -> str:
     clinic = db.query(ClinicData).filter(ClinicData.clinic_id == clinic_id).first()
     if not clinic:
@@ -39,22 +75,21 @@ def generate_patient_uid(db: Session, clinic_id: int) -> str:
     
     prefix = clinic.clinic_code
     
-    # Get all patients for this clinic
-    patients = db.query(Patient).filter(Patient.clinic_id == clinic_id).all()
+    # Query only the single most recently created patient for this clinic whose UID matches the prefix pattern
+    latest_patient = db.query(Patient).filter(
+        Patient.clinic_id == clinic_id,
+        Patient.patient_uid.like(f"{prefix}-%")
+    ).order_by(Patient.id.desc()).first()
     
-    # Extract numeric parts and find the max
     max_number = 0
-    for patient in patients:
+    if latest_patient:
         try:
-            # Split by '-' and get the last part (numeric)
-            parts = patient.patient_uid.split('-')
+            parts = latest_patient.patient_uid.split('-')
             if len(parts) >= 2:
-                num = int(parts[-1])
-                max_number = max(max_number, num)
+                max_number = int(parts[-1])
         except (ValueError, IndexError):
             pass
-    
-    # Generate next ID (increment by 1)
+            
     next_number = max_number + 1
     return f"{prefix}-{next_number}"
 

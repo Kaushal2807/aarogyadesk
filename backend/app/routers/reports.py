@@ -8,15 +8,15 @@ router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 
 @router.get("/kpi")
-async def kpi(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def kpi(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     return get_kpi(db, clinic_id)
 
 
 @router.get("/patient-trend")
-async def patient_trend(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def patient_trend(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     return get_patient_trend(db, clinic_id)
 
 
 @router.get("/expense-comparison")
-async def expense_comparison(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def expense_comparison(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     return get_expense_comparison(db, clinic_id)

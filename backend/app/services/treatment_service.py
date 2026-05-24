@@ -56,9 +56,7 @@ def get_treatments(db: Session, clinic_id: int, skip: int = 0, limit: int = 100)
         .limit(limit)
         .all()
     )
-    # enrich each item with readable names
-    for it in items:
-        _enrich_patient_treatment(db, it)
+    _enrich_patient_treatments_bulk(db, items, clinic_id)
     return items
 
 
@@ -72,9 +70,62 @@ def get_treatments_by_patient(db: Session, clinic_id: int, patient_uid: str):
         .order_by(PatientTreatment.created_at.desc())
         .all()
     )
-    for it in items:
-        _enrich_patient_treatment(db, it)
+    _enrich_patient_treatments_bulk(db, items, clinic_id)
     return items
+
+
+def _enrich_patient_treatments_bulk(db: Session, items: list[PatientTreatment], clinic_id: int):
+    if not items:
+        return
+        
+    diag_ids = {it.diagnosis_id for it in items if it.diagnosis_id}
+    treat_ids = {it.treatment_id for it in items if it.treatment_id}
+    
+    plan_ids = diag_ids.union(treat_ids)
+    plans_map = {}
+    if plan_ids:
+        plans = db.query(TreatmentPlan).filter(
+            TreatmentPlan.id.in_(plan_ids),
+            TreatmentPlan.clinic_id == clinic_id
+        ).all()
+        plans_map = {p.id: p for p in plans}
+        
+    md_map = {}
+    if diag_ids:
+        mds = db.query(MasterDiagnosis).filter(
+            MasterDiagnosis.id.in_(diag_ids),
+            MasterDiagnosis.clinic_id == clinic_id
+        ).all()
+        md_map = {m.id: m for m in mds}
+        
+    mt_map = {}
+    if treat_ids:
+        mts = db.query(MasterTreatmentPlan).filter(
+            MasterTreatmentPlan.id.in_(treat_ids),
+            MasterTreatmentPlan.clinic_id == clinic_id
+        ).all()
+        mt_map = {m.id: m for m in mts}
+        
+    for it in items:
+        if it.diagnosis_id:
+            plan = plans_map.get(it.diagnosis_id)
+            if plan:
+                it.diagnosis = plan.diagnosis
+            else:
+                md = md_map.get(it.diagnosis_id)
+                it.diagnosis = md.diagnosis_name if md else None
+        else:
+            it.diagnosis = None
+            
+        if it.treatment_id:
+            plan = plans_map.get(it.treatment_id)
+            if plan:
+                it.treatment = plan.treatment
+            else:
+                mt = mt_map.get(it.treatment_id)
+                it.treatment = mt.treatment_name if mt else None
+        else:
+            it.treatment = None
 
 
 def _enrich_patient_treatment(db: Session, treatment: PatientTreatment):

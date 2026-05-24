@@ -10,17 +10,17 @@ router = APIRouter(prefix="/api/support", tags=["support"])
 
 
 @router.post("", response_model=SupportResponse, status_code=status.HTTP_201_CREATED)
-async def submit_query(data: SupportCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def submit_query(data: SupportCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return create_query(db, current_user, data)
 
 
 @router.get("", response_model=list[SupportResponse])
-async def list_queries(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def list_queries(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     return get_queries(db)
 
 
 @router.get("/{query_id}", response_model=SupportResponse)
-async def get_query_detail(query_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_query_detail(query_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     result = get_query(db, query_id)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Query not found")
@@ -28,7 +28,7 @@ async def get_query_detail(query_id: int, db: Session = Depends(get_db), admin: 
 
 
 @router.put("/{query_id}/resolve", response_model=SupportResponse)
-async def resolve(query_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def resolve(query_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     result = resolve_query(db, query_id)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Query not found")

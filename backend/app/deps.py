@@ -6,19 +6,23 @@ from sqlalchemy.orm import Session
 from starlette.requests import Request
 
 
-async def get_current_user(
+def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ) -> User:
-    auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authorization header")
+    token_str = request.cookies.get("access_token")
+    if not token_str:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authorization header or cookie")
+        token_str = auth_header
+
     try:
-        scheme, token = auth_header.split()
+        scheme, token = token_str.split()
         if scheme.lower() != "bearer":
             raise ValueError()
     except (ValueError, AttributeError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization header format")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization header or cookie format")
 
     payload = decode_token(token)
     if not payload:

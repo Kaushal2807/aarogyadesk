@@ -318,7 +318,7 @@ ON CONFLICT DO NOTHING;
 
 
 @router.get("/setup")
-async def check_setup():
+def check_setup():
     """Check if setup has already been run"""
     try:
         db = SessionLocal()
@@ -332,7 +332,7 @@ async def check_setup():
 
 
 @router.post("/setup")
-async def run_setup():
+def run_setup():
     """Create all tables and seed data"""
     try:
         db = SessionLocal()

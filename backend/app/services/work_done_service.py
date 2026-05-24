@@ -63,8 +63,7 @@ def get_patient_work_done(db: Session, clinic_id: int, skip: int = 0, limit: int
         .limit(limit)
         .all()
     )
-    for it in items:
-        _enrich_patient_work_done(db, it)
+    _enrich_patient_work_done_bulk(db, items, clinic_id)
     return items
 
 
@@ -78,9 +77,28 @@ def get_patient_work_done_by_uid(db: Session, clinic_id: int, patient_uid: str):
         .order_by(PatientWorkDone.work_date.desc())
         .all()
     )
-    for it in items:
-        _enrich_patient_work_done(db, it)
+    _enrich_patient_work_done_bulk(db, items, clinic_id)
     return items
+
+
+def _enrich_patient_work_done_bulk(db: Session, items: list[PatientWorkDone], clinic_id: int):
+    if not items:
+        return
+        
+    work_done_ids = {it.work_done_id for it in items if it.work_done_id}
+    work_map = {}
+    if work_done_ids:
+        works = db.query(WorkDone).filter(
+            WorkDone.id.in_(work_done_ids),
+            WorkDone.clinic_id == clinic_id
+        ).all()
+        work_map = {w.id: w.work_name for w in works}
+        
+    for it in items:
+        if it.work_done_id:
+            it.work_name = work_map.get(it.work_done_id)
+        else:
+            it.work_name = None
 
 
 def _enrich_patient_work_done(db: Session, record: PatientWorkDone):

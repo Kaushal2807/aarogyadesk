@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/appointments", tags=["appointments"])
 
 
 @router.get("", response_model=list[AppointmentResponse])
-async def list_appointments(
+def list_appointments(
     date: str = Query(None, description="Filter by date (YYYY-MM-DD)"),
     status: str = Query(None, description="Filter by status (pending/completed)"),
     skip: int = Query(0, ge=0),
@@ -28,7 +28,7 @@ async def list_appointments(
 
 
 @router.get("/today-count")
-async def today_appointment_count(
+def today_appointment_count(
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
@@ -37,7 +37,7 @@ async def today_appointment_count(
 
 
 @router.post("", response_model=AppointmentResponse, status_code=status.HTTP_201_CREATED)
-async def create_new_appointment(
+def create_new_appointment(
     appointment: AppointmentCreate,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -46,7 +46,7 @@ async def create_new_appointment(
 
 
 @router.put("/{appointment_id}", response_model=AppointmentResponse)
-async def update_appointment_detail(
+def update_appointment_detail(
     appointment_id: int,
     appointment: AppointmentUpdate,
     db: Session = Depends(get_db),
@@ -59,7 +59,7 @@ async def update_appointment_detail(
 
 
 @router.put("/{appointment_id}/status", response_model=AppointmentResponse)
-async def update_appointment_status(
+def update_appointment_status(
     appointment_id: int,
     status: str = Query(..., description="New status (pending/completed)"),
     db: Session = Depends(get_db),

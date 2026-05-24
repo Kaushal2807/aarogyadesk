@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api", tags=["master-treatment"])
 # ── Diagnoses ──
 
 @router.get("/master-diagnosis", response_model=list[MasterDiagnosisResponse])
-async def list_diagnoses(
+def list_diagnoses(
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
     skip: int = 0,
@@ -27,7 +27,7 @@ async def list_diagnoses(
 
 
 @router.post("/master-diagnosis", response_model=MasterDiagnosisResponse, status_code=status.HTTP_201_CREATED)
-async def add_diagnosis(
+def add_diagnosis(
     data: MasterDiagnosisCreate,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -36,7 +36,7 @@ async def add_diagnosis(
 
 
 @router.put("/master-diagnosis/{diagnosis_id}", response_model=MasterDiagnosisResponse)
-async def edit_diagnosis(
+def edit_diagnosis(
     diagnosis_id: int,
     data: MasterDiagnosisUpdate,
     db: Session = Depends(get_db),
@@ -49,7 +49,7 @@ async def edit_diagnosis(
 
 
 @router.delete("/master-diagnosis/{diagnosis_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_diagnosis(
+def remove_diagnosis(
     diagnosis_id: int,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -61,7 +61,7 @@ async def remove_diagnosis(
 # ── Treatments ──
 
 @router.get("/master-treatment", response_model=list[MasterTreatmentResponse])
-async def list_treatments(
+def list_treatments(
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
     skip: int = 0,
@@ -71,7 +71,7 @@ async def list_treatments(
 
 
 @router.post("/master-treatment", response_model=MasterTreatmentResponse, status_code=status.HTTP_201_CREATED)
-async def add_treatment(
+def add_treatment(
     data: MasterTreatmentCreate,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -80,7 +80,7 @@ async def add_treatment(
 
 
 @router.put("/master-treatment/{treatment_id}", response_model=MasterTreatmentResponse)
-async def edit_treatment(
+def edit_treatment(
     treatment_id: int,
     data: MasterTreatmentUpdate,
     db: Session = Depends(get_db),
@@ -93,7 +93,7 @@ async def edit_treatment(
 
 
 @router.delete("/master-treatment/{treatment_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_treatment(
+def remove_treatment(
     treatment_id: int,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),

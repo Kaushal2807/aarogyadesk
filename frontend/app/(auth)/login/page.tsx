@@ -46,7 +46,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="w-full max-w-[520px] bg-white p-4 sm:p-8 rounded-2xl shadow-lg shadow-black/[0.08]"
+      className="w-full max-w-[520px] bg-white border-2 border-indigo-100 p-4 sm:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
       style={{ animation: 'fadeInUp 0.6s ease forwards' }}
     >
       {/* Logo */}

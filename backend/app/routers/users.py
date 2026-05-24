@@ -11,12 +11,12 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 
 @router.get("", response_model=list[UserResponse])
-async def list_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def list_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     return db.query(User).order_by(User.created_at.desc()).all()
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def add_user(data: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def add_user(data: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     existing = get_user_by_email(db, data.email)
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
@@ -25,7 +25,7 @@ async def add_user(data: UserCreate, db: Session = Depends(get_db), admin: User 
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-async def edit_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def edit_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -41,7 +41,7 @@ async def edit_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def remove_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -50,7 +50,7 @@ async def remove_user(user_id: int, db: Session = Depends(get_db), admin: User =
 
 
 @router.put("/{user_id}/status", response_model=UserResponse)
-async def toggle_status(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def toggle_status(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -62,7 +62,7 @@ async def toggle_status(user_id: int, db: Session = Depends(get_db), admin: User
 
 
 @router.put("/{user_id}/reset-password", response_model=UserResponse)
-async def reset_password(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def reset_password(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

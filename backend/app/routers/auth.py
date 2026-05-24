@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.db.database import get_db
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+def login(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = authenticate_user(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
@@ -31,11 +31,32 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         data={"sub": user.email},
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
     )
+    
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        secure=not settings.debug,
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60
+    )
+    
     return {"access_token": access_token, "token_type": "bearer", "user": UserResponse.model_validate(user)}
 
 
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=not settings.debug,
+        samesite="lax"
+    )
+    return {"message": "Logged out successfully"}
+
+
 @router.post("/register", response_model=UserResponse)
-async def register(user: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def register(user: UserCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     existing = get_user_by_email(db, user.email)
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
@@ -44,5 +65,5 @@ async def register(user: UserCreate, db: Session = Depends(get_db), admin: User 
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)

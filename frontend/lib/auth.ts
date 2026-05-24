@@ -30,8 +30,7 @@ export const auth = {
       password,
     });
 
-    if (response.data.access_token) {
-      localStorage.setItem(TOKEN_KEY, response.data.access_token);
+    if (response.data.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
       // Store timestamp when token was set for 24-hour expiry
       localStorage.setItem(SESSION_TIMESTAMP_KEY, Date.now().toString());
@@ -57,10 +56,15 @@ export const auth = {
     return response.data;
   },
 
-  logout: () => {
-    localStorage.removeItem(TOKEN_KEY);
+  logout: async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (e) {
+      console.error('Logout error', e);
+    }
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(SESSION_TIMESTAMP_KEY);
+    window.location.href = '/login';
   },
 
   getCurrentUser: (): User | null => {
@@ -71,9 +75,8 @@ export const auth = {
   },
 
   getToken: (): string | null => {
-    if (typeof window === 'undefined') return null;
-    if (!auth.isAuthenticated()) return null;
-    return localStorage.getItem(TOKEN_KEY);
+    // For HttpOnly cookies, token is not accessible via JS
+    return null;
   },
 
   // Check if session is still valid (not expired)
@@ -88,8 +91,8 @@ export const auth = {
 
   isAuthenticated: (): boolean => {
     if (typeof window === 'undefined') return false;
-    const hasToken = !!localStorage.getItem(TOKEN_KEY);
-    if (!hasToken) return false;
+    const hasUser = !!localStorage.getItem(USER_KEY);
+    if (!hasUser) return false;
     // Check if session is still valid
     if (!auth.isSessionValid()) {
       auth.logout();

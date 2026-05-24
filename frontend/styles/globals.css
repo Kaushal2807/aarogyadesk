@@ -28,23 +28,7 @@ body {
   position: relative;
 }
 
-/* Abstract Background Image Overlay */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/bg-overlay.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  opacity: 0.18;
-  pointer-events: none;
-  z-index: -1;
-}
+/* Abstract Background Image Overlay replaced by MedicalBackground canvas */
 
 /* ========================================
    SCROLLBAR
@@ -171,9 +155,9 @@ body::before {
 
 .card {
   background: #ffffff;
-  border: none;
+  border: 2px solid #e0e7ff; /* indigo-100 */
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
 

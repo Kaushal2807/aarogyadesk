@@ -9,17 +9,17 @@ router = APIRouter(prefix="/api/doctors", tags=["doctors"])
 
 
 @router.get("", response_model=list[ClinicDoctorResponse])
-async def list_doctors(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def list_doctors(db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     return get_doctors(db, clinic_id)
 
 
 @router.post("", response_model=ClinicDoctorResponse, status_code=status.HTTP_201_CREATED)
-async def add_doctor(data: ClinicDoctorCreate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def add_doctor(data: ClinicDoctorCreate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     return create_doctor(db, clinic_id, data)
 
 
 @router.put("/{doctor_id}", response_model=ClinicDoctorResponse)
-async def edit_doctor(doctor_id: int, data: ClinicDoctorUpdate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def edit_doctor(doctor_id: int, data: ClinicDoctorUpdate, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     result = update_doctor(db, doctor_id, clinic_id, data)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
@@ -27,6 +27,6 @@ async def edit_doctor(doctor_id: int, data: ClinicDoctorUpdate, db: Session = De
 
 
 @router.delete("/{doctor_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def remove_doctor(doctor_id: int, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
+def remove_doctor(doctor_id: int, db: Session = Depends(get_db), clinic_id: int = Depends(get_clinic_id)):
     if not delete_doctor(db, doctor_id, clinic_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")

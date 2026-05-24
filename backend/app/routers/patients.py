@@ -6,7 +6,7 @@ from app.models.user import User
 from app.schemas.patient import PatientCreate, PatientUpdate, PatientResponse
 from app.services.patient_service import (
     get_patient_by_uid, get_patients, get_patient_count, create_patient,
-    update_patient, delete_patient
+    update_patient, delete_patient, get_patient_counts_by_status
 )
 from app.services.patient_service import generate_patient_uid
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/patients", tags=["patients"])
 
 
 @router.get("", response_model=list[PatientResponse])
-async def list_patients(
+def list_patients(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     search: str = Query(None),
@@ -26,20 +26,16 @@ async def list_patients(
 
 
 @router.get("/count")
-async def count_patients(
+def count_patients(
     payment_status: str = Query(None),
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
-    total = get_patient_count(db, clinic_id)
-    paid = get_patient_count(db, clinic_id, "paid")
-    partial = get_patient_count(db, clinic_id, "partial")
-    pending = get_patient_count(db, clinic_id, "pending")
-    return {"total": total, "paid": paid, "partial": partial, "pending": pending}
+    return get_patient_counts_by_status(db, clinic_id)
 
 
 @router.get("/generate-uid")
-async def generate_uid(
+def generate_uid(
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
@@ -48,7 +44,7 @@ async def generate_uid(
 
 
 @router.post("", response_model=PatientResponse, status_code=status.HTTP_201_CREATED)
-async def create_new_patient(
+def create_new_patient(
     patient: PatientCreate,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -57,7 +53,7 @@ async def create_new_patient(
 
 
 @router.get("/{patient_uid}", response_model=PatientResponse)
-async def get_patient_detail(
+def get_patient_detail(
     patient_uid: str,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
@@ -69,7 +65,7 @@ async def get_patient_detail(
 
 
 @router.put("/{patient_uid}", response_model=PatientResponse)
-async def update_patient_detail(
+def update_patient_detail(
     patient_uid: str,
     patient: PatientUpdate,
     db: Session = Depends(get_db),
@@ -82,7 +78,7 @@ async def update_patient_detail(
 
 
 @router.delete("/{patient_uid}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_patient_record(
+def delete_patient_record(
     patient_uid: str,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
