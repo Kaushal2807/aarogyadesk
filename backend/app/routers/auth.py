@@ -36,8 +36,8 @@ def login(request: LoginRequest, response: Response, db: Session = Depends(get_d
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        secure=not settings.debug,
-        samesite="lax",
+        secure=True,          # Always secure in production (Render uses HTTPS)
+        samesite="none",      # Required for cross-origin (Vercel -> Render)
         max_age=settings.access_token_expire_minutes * 60
     )
     
@@ -49,8 +49,8 @@ def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=not settings.debug,
-        samesite="lax"
+        secure=True,
+        samesite="none"
     )
     return {"message": "Logged out successfully"}
 

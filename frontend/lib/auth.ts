@@ -18,9 +18,9 @@ export interface LoginResponse {
 }
 
 // Session expiry in milliseconds (24 hours)
-const SESSION_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours
+const SESSION_EXPIRY_TIME = 24 * 60 * 60 * 1000;
 const SESSION_TIMESTAMP_KEY = 'session_timestamp';
-// const TOKEN_KEY = 'token'; // Removed: auth now uses HttpOnly cookies
+const TOKEN_KEY = 'access_token'; // stored for Authorization header fallback
 const USER_KEY = 'user';
 
 export const auth = {
@@ -32,8 +32,10 @@ export const auth = {
 
     if (response.data.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
-      // Store timestamp when token was set for 24-hour expiry
       localStorage.setItem(SESSION_TIMESTAMP_KEY, Date.now().toString());
+    }
+    if (response.data.access_token) {
+      localStorage.setItem(TOKEN_KEY, response.data.access_token);
     }
 
     return response.data;
@@ -64,6 +66,7 @@ export const auth = {
     }
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(SESSION_TIMESTAMP_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     window.location.href = '/login';
   },
 
@@ -75,8 +78,8 @@ export const auth = {
   },
 
   getToken: (): string | null => {
-    // For HttpOnly cookies, token is not accessible via JS
-    return null;
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(TOKEN_KEY);
   },
 
   // Check if session is still valid (not expired)
