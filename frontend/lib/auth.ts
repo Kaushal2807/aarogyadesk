@@ -20,7 +20,7 @@ export interface LoginResponse {
 // Session expiry in milliseconds (24 hours)
 const SESSION_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours
 const SESSION_TIMESTAMP_KEY = 'session_timestamp';
-const TOKEN_KEY = 'token';
+// const TOKEN_KEY = 'token'; // Removed: auth now uses HttpOnly cookies
 const USER_KEY = 'user';
 
 export const auth = {

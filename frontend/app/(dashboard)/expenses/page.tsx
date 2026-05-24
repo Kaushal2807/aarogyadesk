@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { BiPlusCircle, BiEdit, BiTrash, BiChevronLeft, BiChevronRight, BiSearch } from 'react-icons/bi';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -113,7 +112,7 @@ export default function ExpensesPage() {
     expenses
       .filter(e => e.expense_year === trendYear && e.expense_month != null)
       .forEach(e => {
-        monthMap[e.expense_month] = (monthMap[e.expense_month] || 0) + e.amount;
+        monthMap[e.expense_month!] = (monthMap[e.expense_month!] || 0) + e.amount;
       });
     return Array.from({ length: 12 }, (_, i) => ({
       month: monthNames[i],
@@ -143,7 +142,7 @@ export default function ExpensesPage() {
   const sortedExpenses = useMemo(() => {
     let filtered = [...expenses]
       .filter(e => e.expense_month === tableFilterMonth && e.expense_year === tableFilterYear)
-      .sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime() || b.id - a.id);
+      .sort((a, b) => new Date(b.expense_date ?? '').getTime() - new Date(a.expense_date ?? '').getTime() || b.id - a.id);
     
     // Apply search filter
     if (searchQuery.trim()) {
@@ -172,6 +171,7 @@ export default function ExpensesPage() {
       return { value: String(cat.id), label: cat.category_name };
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to create category");
+      return undefined;
     }
   };
 
@@ -297,8 +297,8 @@ export default function ExpensesPage() {
     <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <Button onClick={() => setShowAddExpense(true)} icon={<BiPlusCircle />}>Add Expense</Button>
-        <Button onClick={() => setShowAddCategory(true)} variant="outline-primary" icon={<BiPlusCircle />}>Add Category</Button>
+        <Button onClick={() => setShowAddExpense(true)} icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}>Add Expense</Button>
+        <Button onClick={() => setShowAddCategory(true)} variant="outline-primary" icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}>Add Category</Button>
         <a href="/expenses/categories" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border-2 border-primary-500 text-primary-500 rounded-lg hover:bg-primary-500 hover:text-white transition-all shadow-sm">
           Manage Categories
         </a>
@@ -353,7 +353,7 @@ export default function ExpensesPage() {
                 {paymentModeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
               <Legend layout="vertical" align="right" verticalAlign="middle" />
-              <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+              <Tooltip formatter={(value) => `₹${Number(value ?? 0).toLocaleString()}`} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -405,7 +405,7 @@ export default function ExpensesPage() {
               
               {/* Center: Search Field */}
               <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-80">
-                <BiSearch className="text-slate-400" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input 
                   type="text" 
                   placeholder="Search by title, category..." 
@@ -478,14 +478,14 @@ export default function ExpensesPage() {
                             className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                             title="Edit Expense"
                           >
-                            <BiEdit className="w-5 h-5" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           </button>
                           <button 
                             onClick={() => { setExpenseToDelete(e.id); setShowDeleteConfirm(true); }}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             title="Delete Expense"
                           >
-                            <BiTrash className="w-5 h-5" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                           </button>
                         </div>
                       </td>
@@ -504,7 +504,7 @@ export default function ExpensesPage() {
                       disabled={currentPage === 1}
                       className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
-                      <BiChevronLeft className="w-4 h-4" />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                     </button>
                     
                     <div className="flex gap-1">
@@ -534,7 +534,7 @@ export default function ExpensesPage() {
                       disabled={currentPage === totalPages}
                       className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
-                      <BiChevronRight className="w-4 h-4" />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </button>
                   </div>
                 </div>
@@ -683,7 +683,7 @@ export default function ExpensesPage() {
         <div className="py-4">
           <div className="flex flex-col items-center justify-center text-center">
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-              <BiTrash className="w-6 h-6 text-red-600" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
             <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Expense?</h3>
             <p className="text-slate-500 text-sm">
@@ -691,7 +691,7 @@ export default function ExpensesPage() {
             </p>
           </div>
           <div className="flex gap-3 justify-center mt-6">
-            <Button variant="outline" onClick={() => { setShowDeleteConfirm(false); setExpenseToDelete(null); }}>
+            <Button variant="outline-secondary" onClick={() => { setShowDeleteConfirm(false); setExpenseToDelete(null); }}>
               Cancel
             </Button>
             <Button variant="danger" onClick={handleDeleteExpense}>

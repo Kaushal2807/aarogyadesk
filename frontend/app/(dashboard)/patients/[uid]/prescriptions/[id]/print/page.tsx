@@ -7,7 +7,6 @@ import { Prescription } from '@/types';
 
 export default function PrintPrescriptionPage() {
   const params = useParams();
-  const uid = params.uid as string;
   const id = params.id as string;
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const [loading, setLoading] = useState(true);

@@ -15,7 +15,7 @@ interface Props {
 
 const parseTeeth = (val?: string) => (val ? val.split(',').filter(Boolean).map(Number) : []);
 
-export default function TreatmentHistoryCard({ treatment, uid, onDeleted }: Props) {
+export default function TreatmentHistoryCard({ treatment, uid: _uid, onDeleted }: Props) {
   const ur = parseTeeth(treatment.tooth_upper_right);
   const ul = parseTeeth(treatment.tooth_upper_left);
   const lr = parseTeeth(treatment.tooth_lower_right);

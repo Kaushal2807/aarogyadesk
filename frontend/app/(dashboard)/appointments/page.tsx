@@ -129,7 +129,7 @@ export default function AppointmentsPage() {
   const handleAdd = async (e: React.FormEvent<any>) => {
     e.preventDefault();
     try {
-      const data = e.formData || formData;
+      const data = (e as any).formData || formData;
       const createData: AppointmentCreate = {
         patient_name: data.patient_name,
         age: data.age ? Number(data.age) : undefined,
@@ -152,7 +152,7 @@ export default function AppointmentsPage() {
     e.preventDefault();
     if (!rescheduleData) return;
     try {
-      const data = e.formData || formData;
+      const data = (e as any).formData || formData;
       const updateData: AppointmentUpdate = {
         patient_name: data.patient_name,
         age: data.age ? Number(data.age) : undefined,

@@ -6,7 +6,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
 import toast from 'react-hot-toast';
-import { BiTrash, BiEdit } from 'react-icons/bi';
+
 import { MasterItem } from '@/types';
 
 type SectionKey = 'medicines' | 'doses' | 'frequencies' | 'durations' | 'quantities' | 'notes';
@@ -66,8 +66,8 @@ export default function PrescriptionMasterPage() {
     loadAll();
   }, []);
 
-  const handleSave = async () => {
-    if (!name.trim()) return toast.error('Name is required');
+  const handleSave = async (): Promise<void> => {
+    if (!name.trim()) { toast.error('Name is required'); return; }
     setLoading(true);
     try {
       let res: MasterItem | void;
@@ -180,8 +180,8 @@ export default function PrescriptionMasterPage() {
               <tr key={it.id} className="border-b">
                 <td className="px-2 py-2">{it.name}</td>
                 <td className="px-2 py-2 text-right">
-                  <button title="Edit" onClick={() => openEdit(keyName, it)} className="inline-flex items-center px-2 py-1 rounded text-amber-700 hover:bg-amber-50 mr-2"><BiEdit /></button>
-                  <button title="Delete" onClick={() => handleDelete(keyName, it.id)} className="inline-flex items-center px-2 py-1 rounded text-red-600 hover:bg-red-50"><BiTrash /></button>
+                  <button title="Edit" onClick={() => openEdit(keyName, it)} className="inline-flex items-center px-2 py-1 rounded text-amber-700 hover:bg-amber-50 mr-2"><svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button title="Delete" onClick={() => handleDelete(keyName, it.id)} className="inline-flex items-center px-2 py-1 rounded text-red-600 hover:bg-red-50"><svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
                 </td>
               </tr>
             ))}

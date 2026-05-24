@@ -20,15 +20,13 @@ import WorkDoneModal from '@/components/dashboard/WorkDoneModal';
 import PatientWorkDoneModal from '@/components/dashboard/PatientWorkDoneModal';
 import CertificateModal from '@/components/dashboard/CertificateModal';
 import { patientService } from '@/lib/services/patients';
-import { treatmentService } from '@/lib/services/treatments';
-import { workDoneService } from '@/lib/services/work-done';
 import { Patient, PatientCount, PatientCreate, PatientUpdate } from '@/types';
 import { toast } from 'react-hot-toast';
 
 export default function DashboardPage() {
   const ITEMS_PER_PAGE = 20;
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [patientCount, setPatientCount] = useState<PatientCount>({ total: 0, paid: 0, partial: 0, pending: 0 });
+  const [, setPatientCount] = useState<PatientCount>({ total: 0, paid: 0, partial: 0, pending: 0 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
