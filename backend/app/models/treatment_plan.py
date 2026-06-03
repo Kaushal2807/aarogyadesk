@@ -6,6 +6,6 @@ class TreatmentPlan(CreatedOnlyModel):
     __tablename__ = "treatment_plan"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    clinic_id = Column(Integer, ForeignKey("clinic_data.clinic_id"), nullable=False)
+    clinic_id = Column(Integer, ForeignKey("clinic_data.clinic_id"), nullable=False, index=True)
     diagnosis = Column(Text, nullable=False)
     treatment = Column(Text, nullable=False)

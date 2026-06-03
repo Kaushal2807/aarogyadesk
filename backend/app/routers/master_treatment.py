@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from app.core.cache import cache_delete_pattern, cache_get, cache_set
 from app.db.database import get_db
 from app.deps import get_clinic_id
 from app.schemas.master_treatment import (
@@ -13,6 +14,27 @@ from app.services.master_treatment_service import (
 
 router = APIRouter(prefix="/api", tags=["master-treatment"])
 
+MASTER_TREATMENT_CACHE_TTL_SECONDS = 1800
+
+
+def _cache_key(clinic_id: int, group: str, skip: int, limit: int) -> str:
+    return f"clinic:{clinic_id}:master-treatment:{group}:skip:{skip}:limit:{limit}"
+
+
+def _get_cached(clinic_id: int, group: str, skip: int, limit: int, loader):
+    key = _cache_key(clinic_id, group, skip, limit)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    data = loader()
+    cache_set(key, data, MASTER_TREATMENT_CACHE_TTL_SECONDS)
+    return data
+
+
+def _invalidate_group(clinic_id: int, group: str) -> None:
+    cache_delete_pattern(f"clinic:{clinic_id}:master-treatment:{group}:*")
+
 
 # ── Diagnoses ──
 
@@ -23,7 +45,7 @@ def list_diagnoses(
     skip: int = 0,
     limit: int = 100,
 ):
-    return get_diagnoses(db, clinic_id, skip, limit)
+    return _get_cached(clinic_id, "diagnosis", skip, limit, lambda: get_diagnoses(db, clinic_id, skip, limit))
 
 
 @router.post("/master-diagnosis", response_model=MasterDiagnosisResponse, status_code=status.HTTP_201_CREATED)
@@ -32,7 +54,9 @@ def add_diagnosis(
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
-    return create_diagnosis(db, clinic_id, data)
+    result = create_diagnosis(db, clinic_id, data)
+    _invalidate_group(clinic_id, "diagnosis")
+    return result
 
 
 @router.put("/master-diagnosis/{diagnosis_id}", response_model=MasterDiagnosisResponse)
@@ -45,6 +69,7 @@ def edit_diagnosis(
     result = update_diagnosis(db, clinic_id, diagnosis_id, data)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Diagnosis not found")
+    _invalidate_group(clinic_id, "diagnosis")
     return result
 
 
@@ -56,6 +81,7 @@ def remove_diagnosis(
 ):
     if not delete_diagnosis(db, clinic_id, diagnosis_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Diagnosis not found")
+    _invalidate_group(clinic_id, "diagnosis")
 
 
 # ── Treatments ──
@@ -67,7 +93,7 @@ def list_treatments(
     skip: int = 0,
     limit: int = 100,
 ):
-    return get_treatments(db, clinic_id, skip, limit)
+    return _get_cached(clinic_id, "treatment", skip, limit, lambda: get_treatments(db, clinic_id, skip, limit))
 
 
 @router.post("/master-treatment", response_model=MasterTreatmentResponse, status_code=status.HTTP_201_CREATED)
@@ -76,7 +102,9 @@ def add_treatment(
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
-    return create_treatment(db, clinic_id, data)
+    result = create_treatment(db, clinic_id, data)
+    _invalidate_group(clinic_id, "treatment")
+    return result
 
 
 @router.put("/master-treatment/{treatment_id}", response_model=MasterTreatmentResponse)
@@ -89,6 +117,7 @@ def edit_treatment(
     result = update_treatment(db, clinic_id, treatment_id, data)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Treatment not found")
+    _invalidate_group(clinic_id, "treatment")
     return result
 
 
@@ -100,3 +129,4 @@ def remove_treatment(
 ):
     if not delete_treatment(db, clinic_id, treatment_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Treatment not found")
+    _invalidate_group(clinic_id, "treatment")

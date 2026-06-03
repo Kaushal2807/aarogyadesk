@@ -10,7 +10,7 @@ export interface Patient {
   total_visit: number;
   notes?: string;
   total_amount: number;
-  payment_status: 'paid' | 'partial' | 'pending';
+  payment_status: 'paid' | 'pending';
   payment_pending: number;
   chief_complain?: string;
   medical_history?: string;
@@ -28,7 +28,7 @@ export interface PatientCreate {
   date_of_visit?: string;
   notes?: string;
   total_amount?: number;
-  payment_status?: 'paid' | 'partial' | 'pending';
+  payment_status?: 'paid' | 'pending';
   payment_pending?: number;
   chief_complain?: string;
   medical_history?: string;
@@ -46,7 +46,7 @@ export interface PatientUpdate {
   total_visit?: number;
   notes?: string;
   total_amount?: number;
-  payment_status?: 'paid' | 'partial' | 'pending';
+  payment_status?: 'paid' | 'pending';
   payment_pending?: number;
   chief_complain?: string;
   medical_history?: string;

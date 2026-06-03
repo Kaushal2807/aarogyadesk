@@ -123,3 +123,18 @@ declare module 'react-icons/md' {
   export const MdDashboard: IconType;
 }
 
+declare module 'react-icons/bs' {
+  import { SVGAttributes, ComponentType } from 'react';
+  interface IconBaseProps extends SVGAttributes<SVGElement> {
+    size?: string | number;
+    color?: string;
+    title?: string;
+  }
+  type IconType = ComponentType<IconBaseProps>;
+
+  export const BsPeopleFill: IconType;
+  export const BsCreditCardFill: IconType;
+  export const BsCalendarEventFill: IconType;
+}
+
+

@@ -6,36 +6,17 @@ import { BiSave, BiShow } from 'react-icons/bi';
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
 import { templateService } from '@/lib/services/templates';
+import { certificateTemplateVariables, defaultCertificateTemplateContent } from '@/lib/template-render';
 import { Template } from '@/types';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 import 'react-quill-new/dist/quill.snow.css';
 
-const certificateVariables = [
-  { label: 'Patient Name', value: '{{patient_name}}' },
-  { label: 'Visit Date', value: '{{visit_date}}' },
-  { label: 'Complaints', value: '{{complaints}}' },
-  { label: 'Treatment Done', value: '{{treatment_done}}' },
-  { label: 'Treatment From', value: '{{treatment_from}}' },
-  { label: 'Treatment To', value: '{{treatment_to}}' },
-  { label: 'Advise', value: '{{advise}}' },
-  { label: 'Doctor Name', value: '{{doctor_name}}' },
-  { label: 'Clinic Name', value: '{{clinic_name}}' },
-];
-
-const defaultContent = '<h2 style="text-align:center">MEDICAL CERTIFICATE</h2>' +
-  '<p>This is to certify that <strong>{{patient_name}}</strong> visited our clinic on <strong>{{visit_date}}</strong>.</p>' +
-  '<p><strong>Complaints:</strong> {{complaints}}</p>' +
-  '<p><strong>Treatment Done:</strong> {{treatment_done}}</p>' +
-  '<p>Treatment period: <strong>{{treatment_from}}</strong> to <strong>{{treatment_to}}</strong></p>' +
-  '<p><strong>Advise:</strong> {{advise}}</p>' +
-  '<br/><p style="text-align:right">Dr. {{doctor_name}}<br/>{{clinic_name}}</p>';
-
 export default function CertificateTemplatePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [templateName, setTemplateName] = useState('Default Certificate');
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState(defaultCertificateTemplateContent);
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -49,7 +30,7 @@ export default function CertificateTemplatePage() {
         if (cert) {
           setSelectedTemplateId(cert.id);
           setTemplateName(cert.template_name);
-          setContent(cert.template_content || defaultContent);
+          setContent(cert.template_content || defaultCertificateTemplateContent);
         }
       } catch {
         // templates are optional
@@ -86,7 +67,7 @@ export default function CertificateTemplatePage() {
     if (tmpl) {
       setSelectedTemplateId(tmpl.id);
       setTemplateName(tmpl.template_name);
-      setContent(tmpl.template_content || defaultContent);
+      setContent(tmpl.template_content || defaultCertificateTemplateContent);
     }
   };
 
@@ -121,7 +102,7 @@ export default function CertificateTemplatePage() {
 
             <h6 className="font-bold text-sm text-slate-700 mt-4 mb-3">Variables</h6>
             <div className="space-y-2">
-              {certificateVariables.map((v) => (
+              {certificateTemplateVariables.map((v) => (
                 <button key={v.value} onClick={() => insertVariable(v.value)} className="w-full text-left px-3 py-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-all font-medium">
                   {v.label}
                   <span className="block text-[10px] text-indigo-400 mt-0.5">{v.value}</span>

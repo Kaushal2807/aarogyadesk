@@ -12,7 +12,7 @@ class PatientCreate(BaseModel):
     date_of_visit: Optional[date] = None
     notes: Optional[str] = None
     total_amount: float = 0
-    payment_status: Literal["paid", "partial", "pending"] = "pending"
+    payment_status: Literal["paid", "pending"] = "pending"
     payment_pending: float = 0
     chief_complain: Optional[str] = None
     medical_history: Optional[str] = None
@@ -30,7 +30,7 @@ class PatientUpdate(BaseModel):
     total_visit: Optional[int] = None
     notes: Optional[str] = None
     total_amount: Optional[float] = None
-    payment_status: Optional[Literal["paid", "partial", "pending"]] = None
+    payment_status: Optional[Literal["paid", "pending"]] = None
     payment_pending: Optional[float] = None
     chief_complain: Optional[str] = None
     medical_history: Optional[str] = None

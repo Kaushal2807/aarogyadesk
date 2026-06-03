@@ -6,47 +6,17 @@ import { BiSave, BiShow } from 'react-icons/bi';
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
 import { templateService } from '@/lib/services/templates';
+import { caseTemplateVariables, defaultCaseTemplateContent } from '@/lib/template-render';
 import { Template } from '@/types';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 import 'react-quill-new/dist/quill.snow.css';
 
-const caseVariables = [
-  { label: 'Patient UID', value: '{{patient_uid}}' },
-  { label: 'Patient Name', value: '{{patient_name}}' },
-  { label: 'Patient Age', value: '{{patient_age}}' },
-  { label: 'Contact Number', value: '{{patient_contact}}' },
-  { label: 'Address', value: '{{patient_address}}' },
-  { label: 'Visit Date', value: '{{visit_date}}' },
-  { label: 'Chief Complaint', value: '{{chief_complaint}}' },
-  { label: 'Medical History', value: '{{medical_history}}' },
-  { label: 'Oral / Diet Habits', value: '{{oral_habit}}' },
-  { label: 'Family History', value: '{{family_history}}' },
-  { label: 'X-Ray Remark', value: '{{xray_remark}}' },
-  { label: 'Doctor Name', value: '{{doctor_name}}' },
-  { label: 'Clinic Name', value: '{{clinic_name}}' },
-];
-
-const defaultContent = '<h2 style="text-align:center">CASE DETAIL SHEET</h2>' +
-  '<table style="width:100%;border-collapse:collapse"><tbody>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc;width:30%"><strong>Patient UID:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_uid}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Patient Name:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_name}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Age:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_age}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Contact:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_contact}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Address:</strong></td><td style="padding:4px;border:1px solid #ccc">{{patient_address}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Visit Date:</strong></td><td style="padding:4px;border:1px solid #ccc">{{visit_date}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Chief Complaint:</strong></td><td style="padding:4px;border:1px solid #ccc">{{chief_complaint}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Medical History:</strong></td><td style="padding:4px;border:1px solid #ccc">{{medical_history}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Oral/Diet Habits:</strong></td><td style="padding:4px;border:1px solid #ccc">{{oral_habit}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>Family History:</strong></td><td style="padding:4px;border:1px solid #ccc">{{family_history}}</td></tr>' +
-  '<tr><td style="padding:4px;border:1px solid #ccc"><strong>X-Ray Remark:</strong></td><td style="padding:4px;border:1px solid #ccc">{{xray_remark}}</td></tr>' +
-  '</tbody></table>';
-
 export default function CaseTemplatePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [templateName, setTemplateName] = useState('Default Case Sheet');
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState(defaultCaseTemplateContent);
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -60,7 +30,7 @@ export default function CaseTemplatePage() {
         if (caseSheet) {
           setSelectedTemplateId(caseSheet.id);
           setTemplateName(caseSheet.template_name);
-          setContent(caseSheet.template_content || defaultContent);
+          setContent(caseSheet.template_content || defaultCaseTemplateContent);
         }
       } catch {
         // templates are optional
@@ -97,7 +67,7 @@ export default function CaseTemplatePage() {
     if (tmpl) {
       setSelectedTemplateId(tmpl.id);
       setTemplateName(tmpl.template_name);
-      setContent(tmpl.template_content || defaultContent);
+      setContent(tmpl.template_content || defaultCaseTemplateContent);
     }
   };
 
@@ -132,7 +102,7 @@ export default function CaseTemplatePage() {
 
             <h6 className="font-bold text-sm text-slate-700 mt-4 mb-3">Variables</h6>
             <div className="space-y-2">
-              {caseVariables.map((v) => (
+              {caseTemplateVariables.map((v) => (
                 <button key={v.value} onClick={() => insertVariable(v.value)} className="w-full text-left px-3 py-2 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg transition-all font-medium">
                   {v.label}
                   <span className="block text-[10px] text-purple-400 mt-0.5">{v.value}</span>

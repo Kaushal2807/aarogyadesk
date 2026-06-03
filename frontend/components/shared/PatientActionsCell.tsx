@@ -23,7 +23,6 @@ export default function PatientActionsCell({
   onAddTreatment,
   onAddPrescription,
   onAddWorkDone,
-  onGenerateCertificate,
   onPrintCase,
   mode = 'full',
 }: PatientActionsCellProps) {
@@ -41,7 +40,14 @@ export default function PatientActionsCell({
           <DropdownItem icon={<BiSolidFile className="text-cyan-500" />} onClick={onPrintCase}>
             Case Details
           </DropdownItem>
-          <DropdownItem icon={<BiSolidAward className="text-amber-500" />} onClick={onGenerateCertificate}>
+          <DropdownItem
+            icon={<BiSolidAward className="text-amber-500" />}
+            onClick={() => {
+              if (patientUid) {
+                window.open(`/patients/${patientUid}/certificate/print`, '_blank');
+              }
+            }}
+          >
             Certificate
           </DropdownItem>
         </Dropdown>

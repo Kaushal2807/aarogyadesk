@@ -47,8 +47,7 @@ export default function ReportsPage() {
   const paymentStatusOptions = [
     { value: 'none', label: 'All Status' },
     { value: 'paid', label: 'Paid' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'partial', label: 'Partial' }
+    { value: 'pending', label: 'Pending' }
   ];
 
   const fetchReportData = useCallback(async () => {

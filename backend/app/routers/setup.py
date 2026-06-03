@@ -258,6 +258,59 @@ TABLES_SQL = [
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""",
+    
+    # --- Performance Indexes ---
+    
+    # Patients Indexes
+    """CREATE INDEX IF NOT EXISTS ix_patients_clinic_id ON patients(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_patients_patient_uid ON patients(patient_uid)""",
+    """CREATE INDEX IF NOT EXISTS ix_patients_clinic_patient ON patients(clinic_id, patient_uid)""",
+
+    # Appointments Indexes
+    """CREATE INDEX IF NOT EXISTS ix_appointments_clinic_id ON appointments(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_appointments_appointment_date ON appointments(appointment_date)""",
+    """CREATE INDEX IF NOT EXISTS ix_appointments_clinic_date ON appointments(clinic_id, appointment_date)""",
+
+    # Prescriptions Indexes
+    """CREATE INDEX IF NOT EXISTS ix_prescriptions_clinic_id ON prescriptions(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescriptions_patient_uid ON prescriptions(patient_uid)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescriptions_clinic_patient ON prescriptions(clinic_id, patient_uid)""",
+
+    # Prescription Items Indexes
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_prescription_id ON prescription_items(prescription_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_clinic_id ON prescription_items(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_drug_id ON prescription_items(drug_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_dose_id ON prescription_items(dose_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_frequency_id ON prescription_items(frequency_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_duration_id ON prescription_items(duration_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_prescription_items_quantity_id ON prescription_items(quantity_id)""",
+
+    # Patient Work Done Indexes
+    """CREATE INDEX IF NOT EXISTS ix_patient_work_done_clinic_id ON patient_work_done(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_patient_work_done_patient_uid ON patient_work_done(patient_uid)""",
+    """CREATE INDEX IF NOT EXISTS ix_patient_work_done_clinic_patient ON patient_work_done(clinic_id, patient_uid)""",
+
+    # Patient Treatments Indexes
+    """CREATE INDEX IF NOT EXISTS ix_patient_treatments_clinic_id ON patient_treatments(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_patient_treatments_patient_uid ON patient_treatments(patient_uid)""",
+    """CREATE INDEX IF NOT EXISTS ix_patient_treatments_clinic_patient ON patient_treatments(clinic_id, patient_uid)""",
+
+    # Expenses Indexes
+    """CREATE INDEX IF NOT EXISTS ix_expenses_clinic_id ON expenses(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_expenses_clinic_year_month ON expenses(clinic_id, expense_year, expense_month)""",
+
+    # Users Indexes
+    """CREATE INDEX IF NOT EXISTS ix_users_clinic_id ON users(clinic_id)""",
+
+    # Master Tables Indexes
+    """CREATE INDEX IF NOT EXISTS ix_master_medicine_clinic_id ON master_medicine(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_dose_clinic_id ON master_dose(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_frequency_clinic_id ON master_frequency(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_duration_clinic_id ON master_duration(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_quantity_clinic_id ON master_quantity(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_notes_clinic_id ON master_notes(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_diagnosis_clinic_id ON master_diagnosis(clinic_id)""",
+    """CREATE INDEX IF NOT EXISTS ix_master_treatment_option_clinic_id ON master_treatment_option(clinic_id)""",
 ]
 
 SEED_MASTER_SQL = [

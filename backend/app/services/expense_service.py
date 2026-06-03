@@ -53,6 +53,31 @@ def delete_category(db: Session, clinic_id: int, category_id: int):
     return True
 
 
+# ── Internal helper ──
+
+def _build_category_map(db: Session, expenses: list) -> dict:
+    """
+    Build a {category_id: category_name} map in a SINGLE query for the given
+    list of expenses. Eliminates the N+1 per-expense category lookup.
+    """
+    category_ids = {e.category_id for e in expenses if e.category_id}
+    if not category_ids:
+        return {}
+    cats = (
+        db.query(ExpenseCategory.id, ExpenseCategory.category_name)
+        .filter(ExpenseCategory.id.in_(category_ids))
+        .all()
+    )
+    return {cat.id: cat.category_name for cat in cats}
+
+
+def _attach_category_names(expenses: list, category_map: dict):
+    """Attach category_name to each expense object from the pre-built map."""
+    for expense in expenses:
+        if expense.category_id:
+            expense.category_name = category_map.get(expense.category_id)
+
+
 # ── Expenses ──
 
 def get_expenses(
@@ -64,7 +89,6 @@ def get_expenses(
     year: int = None,
     category_id: int = None,
 ):
-    from sqlalchemy.orm import joinedload
     query = db.query(Expense).filter(Expense.clinic_id == clinic_id)
     if month is not None:
         query = query.filter(Expense.expense_month == month)
@@ -72,16 +96,13 @@ def get_expenses(
         query = query.filter(Expense.expense_year == year)
     if category_id is not None:
         query = query.filter(Expense.category_id == category_id)
-    
+
     expenses = query.order_by(Expense.created_at.desc()).offset(skip).limit(limit).all()
-    
-    # Attach category_name to each expense
-    for expense in expenses:
-        if expense.category_id:
-            cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == expense.category_id).first()
-            if cat:
-                expense.category_name = cat.category_name
-    
+
+    # ONE bulk query for all category names — eliminates N+1
+    category_map = _build_category_map(db, expenses)
+    _attach_category_names(expenses, category_map)
+
     return expenses
 
 
@@ -98,13 +119,13 @@ def create_expense(db: Session, clinic_id: int, data: ExpenseCreate):
     db.add(expense)
     db.commit()
     db.refresh(expense)
-    
-    # Attach category_name if category_id exists
+
+    # Single targeted lookup — only needed for the one new expense, not N+1
     if expense.category_id:
         cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == expense.category_id).first()
         if cat:
             expense.category_name = cat.category_name
-    
+
     return expense
 
 
@@ -117,13 +138,13 @@ def update_expense(db: Session, clinic_id: int, expense_id: int, data: ExpenseUp
     db.add(expense)
     db.commit()
     db.refresh(expense)
-    
-    # Attach category_name if category_id exists
+
+    # Single targeted lookup — category changed, re-fetch name
     if expense.category_id:
         cat = db.query(ExpenseCategory).filter(ExpenseCategory.id == expense.category_id).first()
         if cat:
             expense.category_name = cat.category_name
-    
+
     return expense
 
 
@@ -134,6 +155,8 @@ def delete_expense(db: Session, clinic_id: int, expense_id: int):
     db.delete(expense)
     db.commit()
     return True
+
+
 
 
 # ── Summary ──

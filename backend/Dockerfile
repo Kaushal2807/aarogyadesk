@@ -13,4 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Write startup script: run migrations (with retry for database connections) then start the server
+RUN printf '#!/bin/bash\nset -e\necho "Running DB migrations..."\npython run_migrations.py\necho "Starting Uvicorn..."\nexec uvicorn app.main:app --host 0.0.0.0 --port 8000 "$@"\n' > /app/start.sh && chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]

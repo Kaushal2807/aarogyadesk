@@ -12,11 +12,28 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://neondb_owner:npg_pQzFUc2SfT6n@ep-purple-mountain-anj8lnhd.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
+      DATABASE_URL: postgresql://postgres.gfxudbkekitkrhtbikvp:vyzentech123@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
       SECRET_KEY: aarogyadesk-secret-key-2024
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      CACHE_ENABLED: "true"
+      REDIS_URL: redis://redis:6379/0
+      CACHE_DEFAULT_TTL_SECONDS: 300
       DEBUG: "false"
+    depends_on:
+      - redis
     volumes:
       - ./app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  redis:
+    image: redis:7-alpine
+    container_name: aarogyadesk_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

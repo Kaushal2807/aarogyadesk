@@ -18,6 +18,7 @@ export default function AppointmentsPage() {
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [search, setSearch] = useState('');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -48,14 +49,14 @@ export default function AppointmentsPage() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Filter to show only today's appointments
-  const todayAppointments = appointments.filter(a => a.appointment_date === today);
+  // Filter to show appointments for the selected date
+  const selectedDateAppointments = appointments.filter(a => a.appointment_date === selectedDate);
 
   const filteredAppointments = search
-    ? todayAppointments.filter(a => a.patient_name.toLowerCase().includes(search.toLowerCase()) || (a.contact_number || '').includes(search))
-    : todayAppointments;
+    ? selectedDateAppointments.filter(a => a.patient_name.toLowerCase().includes(search.toLowerCase()) || (a.contact_number || '').includes(search))
+    : selectedDateAppointments;
 
-  const todayCount = todayAppointments.filter((a) => a.status === 'pending').length;
+  const activeCount = selectedDateAppointments.filter((a) => a.status === 'pending').length;
 
   const formatTime = (time: string) => {
     const [h, m] = time.split(':');
@@ -224,17 +225,18 @@ export default function AppointmentsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
-      {/* Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-        <div className="flex-1 max-w-[40%]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div className="w-full sm:max-w-xs">
           <SearchInput value={search} onChange={setSearch} placeholder="Search by name or number..." />
         </div>
-        <div className="bg-white shadow-sm px-4 py-2 rounded-full font-semibold text-sm">
-          Today&apos;s Appointments: <span className="text-primary-600 font-bold">{todayCount}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-white shadow-sm px-4 py-2 rounded-full font-semibold text-sm">
+            Appointments count: <span className="text-primary-600 font-bold">{activeCount}</span>
+          </div>
+          <Button onClick={() => setShowAddModal(true)} icon={<BiPlusCircle />}>
+            Add Appointment
+          </Button>
         </div>
-        <Button onClick={() => setShowAddModal(true)} icon={<BiPlusCircle />}>
-          Add Appointment
-        </Button>
       </div>
 
       {/* Error */}
@@ -247,8 +249,15 @@ export default function AppointmentsPage() {
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-        <div className="p-4">
-          <h4 className="font-bold text-primary-600 mb-4">Appointments</h4>
+        <div className="p-4 flex items-center justify-between border-b border-slate-100">
+          <h4 className="font-bold text-primary-600">Appointments</h4>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ width: '150px' }}
+            className="border-2 border-slate-200 rounded-[10px] px-3 py-2 text-sm bg-white text-slate-700 cursor-pointer font-medium outline-none focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] transition-all duration-300"
+          />
         </div>
         <div className="overflow-x-auto">
           {loading ? (

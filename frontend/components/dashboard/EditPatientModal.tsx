@@ -204,7 +204,6 @@ export default function EditPatientModal({ isOpen, onClose, patient, onSave, sav
               onChange={handleChange}
               options={[
                 { value: 'pending', label: 'Pending' },
-                { value: 'partial', label: 'Partial' },
                 { value: 'paid', label: 'Paid' },
               ]}
             />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiCreditCard, BiSolidUserPlus, BiSolidCloudLightning, BiClipboard, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
+import { BsPeopleFill, BsCreditCardFill, BsCalendarEventFill } from 'react-icons/bs';
 import KPICard from '@/components/ui/KPICard';
 import Badge from '@/components/ui/Badge';
 import SearchInput from '@/components/ui/SearchInput';
@@ -138,7 +139,7 @@ export default function DashboardPage() {
   };
 
   const handlePrintCase = (patient: Patient) => {
-    window.open(`/patients/${patient.patient_uid}/history`, '_blank');
+    window.open(`/patients/${patient.patient_uid}/case-details/print`, '_blank');
   };
 
   // Calculate statistics based on filters
@@ -195,7 +196,7 @@ export default function DashboardPage() {
           title="Total Patients"
           subtitle="Patients registered"
           value={getTotalPatientsByMonth()}
-          icon={<span>👥</span>}
+          icon={<BsPeopleFill />}
           bgClass="bg-indigo-50"
           iconBgClass="bg-indigo-600"
           textClass="text-indigo-800"
@@ -215,7 +216,7 @@ export default function DashboardPage() {
           title="Payment Status"
           subtitle="Patients"
           value={getPaidPatientCount()}
-          icon={<span>💳</span>}
+          icon={<BsCreditCardFill />}
           bgClass="bg-emerald-50"
           iconBgClass="bg-emerald-600"
           textClass="text-emerald-800"
@@ -225,9 +226,8 @@ export default function DashboardPage() {
               onChange={(e) => setSelectedPaymentStatus(e.target.value)}
               className="border border-emerald-300 rounded-lg px-2 py-1 text-sm bg-white text-emerald-700 cursor-pointer font-medium"
             >
-              <option value="paid">Paid ({patients.filter(p => p.payment_status?.toLowerCase() === 'paid').length})</option>
-              <option value="partial">Partial ({patients.filter(p => ['partial', 'partial payment'].includes(p.payment_status?.toLowerCase() || '')).length})</option>
-              <option value="pending">Pending ({patients.filter(p => ['pending', 'unpaid'].includes(p.payment_status?.toLowerCase() || '')).length})</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
             </select>
           }
         />
@@ -235,7 +235,7 @@ export default function DashboardPage() {
           title="Today's Patients"
           subtitle="Patients visited"
           value={getTodayPatients()}
-          icon={<span>📅</span>}
+          icon={<BsCalendarEventFill />}
           bgClass="bg-purple-50"
           iconBgClass="bg-purple-600"
           textClass="text-purple-800"
@@ -263,7 +263,7 @@ export default function DashboardPage() {
         {/* Panel Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <span className="text-primary-500 text-lg">👥</span>
+            <BsPeopleFill className="w-5 h-5 text-primary-500" />
             <span className="font-bold text-sm text-slate-800">Patient Records</span>
             <Badge variant="count">{patients.length} Records</Badge>
           </div>
