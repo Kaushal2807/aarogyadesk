@@ -361,7 +361,7 @@ export default function DashboardPage() {
 
         {/* Pagination */}
         {patients.length > 0 && (
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-4">
+          <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
             <div className="text-sm text-slate-600">
               Showing <span className="font-semibold">{startIndex + 1}</span> to <span className="font-semibold">{Math.min(endIndex, patients.length)}</span> of <span className="font-semibold">{patients.length}</span> patients
             </div>

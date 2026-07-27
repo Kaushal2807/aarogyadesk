@@ -239,12 +239,12 @@ export default function AdminPage() {
           <div className="space-y-4">
             <p className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Clinic Details</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormInput label="Clinic Name" name="clinic_name" required placeholder="Enter clinic name" />
-              <FormInput label="Clinic Code" name="clinic_code" required placeholder="e.g. SWA" />
-              <FormInput label="Phone" name="phone" required placeholder="Clinic phone" />
-              <FormInput label="Email" name="email" type="email" required placeholder="clinic@email.com" />
+              <FormInput label="Clinic Name" name="clinic_name" required placeholder="Enter clinic name" maxLength={100} />
+              <FormInput label="Clinic Code" name="clinic_code" required placeholder="e.g. SWA" maxLength={20} />
+              <FormInput label="Phone" name="phone" required type="tel" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" placeholder="Clinic phone" />
+              <FormInput label="Email" name="email" type="email" required placeholder="clinic@email.com" maxLength={150} />
             </div>
-            <FormInput label="Address" name="address" required placeholder="Full address" />
+            <FormInput label="Address" name="address" required placeholder="Full address" maxLength={250} />
 
             <p className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2 mt-2">Subscription Details</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -74,7 +74,9 @@ const value = (input?: string | number | null) => String(input ?? '');
 export function renderPatientTemplate(
   content: string,
   patient: Patient,
-  latestTreatment?: PatientTreatment | null
+  latestTreatment?: PatientTreatment | null,
+  doctorName?: string,
+  clinicName?: string
 ): string {
   const treatmentDate = latestTreatment?.created_at?.slice(0, 10) || patient.date_of_visit || '';
   const replacements: Record<string, string> = {
@@ -95,8 +97,8 @@ export function renderPatientTemplate(
     treatment_from: value(treatmentDate),
     treatment_to: value(treatmentDate),
     advise: value(latestTreatment?.remarks),
-    doctor_name: 'Dr. [Your Clinic]',
-    clinic_name: '[Clinic Name]',
+    doctor_name: doctorName || '',
+    clinic_name: clinicName || '',
   };
 
   return Object.entries(replacements).reduce(
@@ -104,3 +106,4 @@ export function renderPatientTemplate(
     content
   );
 }
+

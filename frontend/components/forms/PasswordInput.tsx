@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BiShow, BiHide } from 'react-icons/bi';
+import { BiShow, BiHide, BiLock } from 'react-icons/bi';
 import { InputHTMLAttributes } from 'react';
 
 interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -17,18 +17,19 @@ export default function PasswordInput({ label, error, id, className = '', ...pro
       <label htmlFor={id} className="block text-sm font-semibold text-slate-600 mb-2">
         {label}
       </label>
-      <div className="flex">
+      <div className="relative">
+        <BiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         <input
           id={id}
           type={showPassword ? 'text' : 'password'}
-          className={`flex-1 py-2.5 px-3.5 text-sm border-2 rounded-l-[10px] bg-white transition-all duration-300 focus:outline-none border-r-0 ${error ? 'border-red-400' : 'border-slate-200 focus:border-primary-500 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]'
-            }`}
+          className={`w-full py-2.5 text-sm border-2 rounded-[10px] bg-white transition-all duration-300 focus:outline-none placeholder:text-slate-400 ${error ? 'border-red-400 focus:ring-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'border-slate-200 focus:border-[#003D7A] focus:shadow-[0_0_0_3px_rgba(0,61,122,0.1)]'}`}
+          style={{ paddingLeft: '2.25rem', paddingRight: '2.25rem' }}
           {...props}
         />
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="px-3.5 py-2.5 border-2 border-l-0 border-slate-200 rounded-r-[10px] text-slate-500 hover:text-primary-500 hover:border-primary-300 hover:bg-slate-50 transition-all"
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#003D7A] transition-colors"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
           {showPassword ? <BiHide className="w-4 h-4" /> : <BiShow className="w-4 h-4" />}

@@ -6,7 +6,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import { clinicService } from '@/lib/services/clinic';
 import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle } from 'react-icons/bi';
+import { Clinic } from '@/types';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: <BiBarChart className="w-4 h-4" /> },
@@ -27,10 +29,41 @@ export default function AppHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [user, setUser] = useState<ReturnType<typeof auth.getCurrentUser>>(null);
+  const [clinic, setClinic] = useState<Clinic | null>(null);
 
   useEffect(() => {
-    // Set user only on client-side after hydration to avoid SSR mismatch
-    setUser(auth.getCurrentUser());
+    // Set user only on client-side after hydration
+    const currentUser = auth.getCurrentUser();
+    setUser(currentUser);
+    
+    if (currentUser) {
+      import('@/lib/api').then(({ default: apiClient }) => {
+        // Try /clinics/me first
+        apiClient.get('/clinics/me')
+          .then(res => {
+            const data = res.data?.data || res.data;
+            if (data && data.clinic_name) {
+              setClinic(data);
+            } else if (currentUser.clinic_id) {
+              // Fallback if data is weird
+              apiClient.get(`/clinics/${currentUser.clinic_id}`)
+                .then(r => {
+                  const rData = r.data?.data || r.data;
+                  if (rData) setClinic(rData);
+                }).catch(() => {});
+            }
+          })
+          .catch(() => {
+            if (currentUser.clinic_id) {
+              apiClient.get(`/clinics/${currentUser.clinic_id}`)
+                .then(r => {
+                  const rData = r.data?.data || r.data;
+                  if (rData) setClinic(rData);
+                }).catch(() => {});
+            }
+          });
+      });
+    }
   }, []);
 
   const handleLogout = () => {
@@ -46,15 +79,29 @@ export default function AppHeader() {
   const closeMobile = () => setMobileMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm print:hidden">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
-            <Image src="/favicon.png" alt="Aarogyasdesk" width={36} height={36} className="rounded-lg" />
-            <span className="text-xl font-bold hidden sm:inline">
-              <span className="text-[#003D7A]">Aarogyas</span>
-              <span className="text-[#2E8B57]">desk</span>
+            {clinic?.logo ? (
+              <img src={clinic.logo} alt={clinic.clinic_name} className="w-9 h-9 rounded-lg object-contain bg-white border border-slate-100" />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                {clinic?.clinic_name ? clinic.clinic_name.charAt(0).toUpperCase() : (user?.name ? user.name.charAt(0).toUpperCase() : 'A')}
+              </div>
+            )}
+            <span className="text-xl font-bold hidden sm:inline text-slate-800">
+              {clinic?.clinic_name ? (
+                clinic.clinic_name
+              ) : (user?.name ? (
+                user.name
+              ) : (
+                <>
+                  <span className="text-[#003D7A]">Aarogyas</span>
+                  <span className="text-[#2E8B57]">desk</span>
+                </>
+              ))}
             </span>
           </Link>
 

@@ -312,3 +312,189 @@ label {
     font-size: 0.8rem;
   }
 }
+
+/* ========================================
+   TIPTAP RICH TEXT EDITOR
+   ======================================== */
+
+.template-editor-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.template-editor-content {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: #1e293b;
+  caret-color: #7c3aed;
+}
+
+/* Placeholder */
+.template-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  font-style: italic;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Headings */
+.template-editor-content h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+
+.template-editor-content h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.6rem;
+  line-height: 1.35;
+}
+
+.template-editor-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Paragraph */
+.template-editor-content p {
+  margin-bottom: 0.6rem;
+}
+
+/* Lists */
+.template-editor-content ul,
+.template-editor-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.template-editor-content ul {
+  list-style-type: disc;
+}
+
+.template-editor-content ol {
+  list-style-type: decimal;
+}
+
+.template-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* Blockquote */
+.template-editor-content blockquote {
+  border-left: 3px solid #7c3aed;
+  padding-left: 1rem;
+  color: #64748b;
+  font-style: italic;
+  margin: 0.75rem 0;
+}
+
+/* Code inline */
+.template-editor-content code {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  color: #7c3aed;
+}
+
+/* Horizontal Rule */
+.template-editor-content hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 1.25rem 0;
+}
+
+/* Strong / Em / Underline / Strike */
+.template-editor-content strong { font-weight: 700; }
+.template-editor-content em { font-style: italic; }
+.template-editor-content u { text-decoration: underline; }
+.template-editor-content s { text-decoration: line-through; }
+
+/* Text align */
+.template-editor-content [style*="text-align: center"] { text-align: center; }
+.template-editor-content [style*="text-align: right"] { text-align: right; }
+.template-editor-content [style*="text-align: justify"] { text-align: justify; }
+
+/* Tables */
+.template-editor-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.template-editor-content table th,
+.template-editor-content table td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  min-width: 60px;
+  position: relative;
+}
+
+.template-editor-content table th {
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.template-editor-content table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.template-editor-content table tr:hover td {
+  background: #f1f5f9;
+}
+
+/* Table selected cell */
+.template-editor-content .selectedCell::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(124, 58, 237, 0.12);
+}
+
+/* Table resize handle */
+.template-editor-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #7c3aed;
+  opacity: 0;
+  cursor: col-resize;
+  transition: opacity 0.2s;
+}
+
+.template-editor-content .column-resize-handle:hover,
+.template-editor-content.resize-cursor .column-resize-handle {
+  opacity: 1;
+}
+
+/* Toolbar select overrides (ensure toolbar selects have normal width) */
+.template-editor-toolbar select {
+  width: auto;
+}

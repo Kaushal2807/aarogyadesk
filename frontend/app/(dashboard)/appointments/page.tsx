@@ -195,13 +195,13 @@ export default function AppointmentsPage() {
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
           <div>
-            <FormInput label="Patient Name" value={data.patient_name} onChange={(e) => setData({ ...data, patient_name: e.target.value })} required placeholder="Enter patient name" />
+            <FormInput label="Patient Name" value={data.patient_name} onChange={(e) => setData({ ...data, patient_name: e.target.value })} required placeholder="Enter patient name" maxLength={100} />
           </div>
           <div>
-            <FormInput label="Age" value={data.age} onChange={(e) => setData({ ...data, age: e.target.value })} type="number" placeholder="Enter age" required />
+            <FormInput label="Age" value={data.age} onChange={(e) => setData({ ...data, age: e.target.value })} type="number" min="0" max="150" placeholder="Enter age" required />
           </div>
           <div>
-            <FormInput label="Contact Number" value={data.contact_number} onChange={(e) => setData({ ...data, contact_number: e.target.value })} required placeholder="Enter contact number" />
+            <FormInput label="Contact Number" value={data.contact_number} onChange={(e) => setData({ ...data, contact_number: e.target.value })} required type="tel" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" placeholder="Enter contact number" />
           </div>
           <div>
             <FormInput label="Date" value={data.appointment_date} onChange={(e) => setData({ ...data, appointment_date: e.target.value })} type="date" required min={today} />
@@ -213,7 +213,7 @@ export default function AppointmentsPage() {
             <FormSelect label="Booking Type" value={data.booking_type} onChange={(e) => setData({ ...data, booking_type: e.target.value })} options={[{ value: 'walk-in', label: 'Walk-in' }, { value: 'call', label: 'On Call' }]} required />
           </div>
           <div className="md:col-span-2">
-            <FormInput label="Address" value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} placeholder="Enter address" />
+            <FormInput label="Address" value={data.address} onChange={(e) => setData({ ...data, address: e.target.value })} placeholder="Enter address" maxLength={250} />
           </div>
         </div>
         <div className="flex justify-center gap-3 pt-6 border-t border-slate-200 mt-6">
