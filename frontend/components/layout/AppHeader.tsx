@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { clinicService } from '@/lib/services/clinic';
 import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle } from 'react-icons/bi';
 import { Clinic } from '@/types';
 

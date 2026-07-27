@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { auth } from '@/lib/auth';
-import { clinicService } from '@/lib/services/clinic';
-import { Clinic } from '@/types';
 
 export default function AppFooter() {
   const [clinicName, setClinicName] = useState<string>('');
