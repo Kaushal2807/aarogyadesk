@@ -41,7 +41,10 @@ def get_current_user(
 
 def require_clinic_user(current_user: User = Depends(get_current_user)) -> int:
     if not current_user.clinic_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Clinic access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No clinic assigned to this user. Please contact an administrator to assign a clinic."
+        )
     return current_user.clinic_id
 
 
