@@ -54,8 +54,8 @@ export default function LoginPage() {
         <Image
           src="/logo.png"
           alt="Aarogyasdesk"
-          width={200}
-          height={200}
+          width={280}
+          height={280}
           className="drop-shadow-md"
           priority
         />

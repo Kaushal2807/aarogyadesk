@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { patientService } from '@/lib/services/patients';
 import PatientHeader from '@/components/patients/PatientHeader';
@@ -10,7 +10,9 @@ import { Patient } from '@/types';
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
+  const pathname = usePathname();
   const uid = params.uid as string;
+  const isPrintPage = pathname.includes('/print');
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,9 +48,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
-      <PatientHeader patient={patient} />
-      <PatientTabs uid={uid} />
+    <div className={isPrintPage ? '' : 'max-w-7xl mx-auto px-4 mt-6 mb-4'}>
+      {!isPrintPage && <PatientHeader patient={patient} />}
+      {!isPrintPage && <PatientTabs uid={uid} />}
       {children}
     </div>
   );

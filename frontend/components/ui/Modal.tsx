@@ -9,6 +9,7 @@ interface ModalProps {
   title?: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  footer?: ReactNode;
 }
 
 const sizeClasses: Record<string, string> = {
@@ -18,7 +19,7 @@ const sizeClasses: Record<string, string> = {
   xl: 'max-w-4xl',
 };
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, size = 'md', footer }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -47,11 +48,11 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       />
       {/* Modal Content */}
       <div
-        className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl p-4 animate-[modalSlideIn_0.3s_ease-out] max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl animate-[modalSlideIn_0.3s_ease-out] flex flex-col max-h-[90vh] overflow-hidden`}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-slate-100">
+          <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white z-10">
             <h5 className="text-lg font-bold text-primary-600">{title}</h5>
             <button
               onClick={onClose}
@@ -62,7 +63,15 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
           </div>
         )}
         {/* Body */}
-        <div>{children}</div>
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+          {children}
+        </div>
+        {/* Footer */}
+        {footer && (
+          <div className="flex-shrink-0 px-6 py-4 border-t border-slate-100 bg-slate-50 z-10">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

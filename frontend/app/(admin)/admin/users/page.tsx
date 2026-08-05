@@ -23,6 +23,7 @@ export default function AdminUsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [newUserType, setNewUserType] = useState('clinic');
   const [editForm, setEditForm] = useState({ name: '', email: '', user_type: 'clinic', clinic_id: '', status: 'Active' });
+  const [editUserType, setEditUserType] = useState('clinic');
 
   const fetchData = useCallback(async () => {
     try {
@@ -87,6 +88,7 @@ export default function AdminUsersPage() {
       clinic_id: user.clinic_id ? String(user.clinic_id) : '',
       status: user.status,
     });
+    setEditUserType(user.user_type);
     setEditUser(user);
   };
 
@@ -257,15 +259,16 @@ export default function AdminUsersPage() {
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New User" size="md">
         <form onSubmit={handleAdd}>
           <div className="space-y-4">
-            <FormInput label="Name" name="name" required placeholder="User name" />
-            <FormInput label="Email" name="email" type="email" required placeholder="user@email.com" />
+            <FormInput label="Name" name="name" required placeholder="User name" maxLength={100} />
+            <FormInput label="Email" name="email" type="email" required placeholder="user@email.com" maxLength={150} />
             <FormInput label="Password" name="password" type="password" required placeholder="Set password" />
             <FormSelect label="User Type" name="user_type" options={[{ value: 'admin', label: 'Admin' }, { value: 'clinic', label: 'Clinic' }]} onChange={(e) => setNewUserType(e.target.value)} />
             {newUserType === 'clinic' && <FormSelect
               label="Clinic"
               name="clinic_id"
+              required
               options={clinics.map(c => ({ value: String(c.clinic_id), label: c.clinic_name }))}
-              placeholder="Select clinic (for clinic users)"
+              placeholder="Select clinic (required for clinic users)"
             />}
           </div>
           <div className="flex justify-center pt-4 border-t border-slate-100 mt-4">
@@ -278,14 +281,15 @@ export default function AdminUsersPage() {
       <Modal isOpen={!!editUser} onClose={() => setEditUser(null)} title="Edit User" size="md">
         <form onSubmit={handleEdit}>
           <div className="space-y-4">
-            <FormInput label="Name" name="name" required defaultValue={editForm.name} placeholder="User name" />
-            <FormInput label="Email" name="email" type="email" required defaultValue={editForm.email} placeholder="user@email.com" />
-            <FormSelect label="User Type" name="user_type" options={[{ value: 'admin', label: 'Admin' }, { value: 'clinic', label: 'Clinic' }]} defaultValue={editForm.user_type} />
-            {editForm.user_type === 'clinic' && <FormSelect
+            <FormInput label="Name" name="name" required defaultValue={editForm.name} placeholder="User name" maxLength={100} />
+            <FormInput label="Email" name="email" type="email" required defaultValue={editForm.email} placeholder="user@email.com" maxLength={150} />
+            <FormSelect label="User Type" name="user_type" options={[{ value: 'admin', label: 'Admin' }, { value: 'clinic', label: 'Clinic' }]} defaultValue={editForm.user_type} onChange={(e) => setEditUserType(e.target.value)} />
+            {editUserType === 'clinic' && <FormSelect
               label="Clinic"
               name="clinic_id"
+              required
               options={clinics.map(c => ({ value: String(c.clinic_id), label: c.clinic_name }))}
-              placeholder="Select clinic"
+              placeholder="Select clinic (required)"
               defaultValue={editForm.clinic_id}
             />}
             <FormSelect label="Status" name="status" options={[{ value: 'Active', label: 'Active' }, { value: 'Inactive', label: 'Inactive' }]} defaultValue={editForm.status} />

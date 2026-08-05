@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { BiSave, BiShow } from 'react-icons/bi';
+
+// Inline star icon (BiStar not exported in installed react-icons version)
+const IcStar = () => <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>;
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
+import TemplateEditor from '@/components/templates/TemplateEditor';
 import { templateService } from '@/lib/services/templates';
 import { certificateTemplateVariables, defaultCertificateTemplateContent } from '@/lib/template-render';
 import { Template } from '@/types';
-
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
-import 'react-quill-new/dist/quill.snow.css';
 
 export default function CertificateTemplatePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -20,17 +20,24 @@ export default function CertificateTemplatePage() {
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [defaultTemplateId, setDefaultTemplateId] = useState<number | null>(null);
 
   useEffect(() => {
+    const savedDefault = localStorage.getItem('default_certificate_template_id');
+    if (savedDefault) setDefaultTemplateId(Number(savedDefault));
+
     const fetchTemplates = async () => {
       try {
         const data = await templateService.getAll();
         setTemplates(data);
-        const cert = data.find(t => t.template_name.toLowerCase().includes('certificate'));
-        if (cert) {
-          setSelectedTemplateId(cert.id);
-          setTemplateName(cert.template_name);
-          setContent(cert.template_content || defaultCertificateTemplateContent);
+        const savedId = localStorage.getItem('default_certificate_template_id');
+        const preferred = savedId ? data.find(t => t.id === Number(savedId)) : null;
+        const fallback = data.find(t => t.template_name.toLowerCase().includes('certificate'));
+        const toLoad = preferred || fallback;
+        if (toLoad) {
+          setSelectedTemplateId(toLoad.id);
+          setTemplateName(toLoad.template_name);
+          setContent(toLoad.template_content || defaultCertificateTemplateContent);
         }
       } catch {
         // templates are optional
@@ -62,6 +69,14 @@ export default function CertificateTemplatePage() {
     }
   };
 
+  const handleSetDefault = () => {
+    if (!selectedTemplateId) return;
+    localStorage.setItem('default_certificate_template_id', String(selectedTemplateId));
+    setDefaultTemplateId(selectedTemplateId);
+    setMessage('✓ Set as default certificate template for printing!');
+    setTimeout(() => setMessage(null), 3000);
+  };
+
   const handleSelectTemplate = async (id: number) => {
     const tmpl = templates.find(t => t.id === id);
     if (tmpl) {
@@ -85,11 +100,28 @@ export default function CertificateTemplatePage() {
             </select>
           )}
         </div>
-        <div className="flex gap-2">
-          {message && <span className={`text-xs ${message.includes('success') ? 'text-emerald-600' : 'text-red-600'}`}>{message}</span>}
+        <div className="flex flex-wrap items-center gap-2">
+          {message && (
+            <span className={`text-xs font-medium px-2 py-1 rounded-lg ${
+              message.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+            }`}>{message}</span>
+          )}
+          {selectedTemplateId && defaultTemplateId === selectedTemplateId && (
+            <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
+              <IcStar /> Default
+            </span>
+          )}
           <Button variant="outline-secondary" onClick={() => setShowPreview(!showPreview)} icon={<BiShow />}>
             {showPreview ? 'Edit' : 'Preview'}
           </Button>
+          <button
+            onClick={handleSetDefault}
+            disabled={!selectedTemplateId}
+            title="Set this as the default template used when printing certificates"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-amber-300 text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <IcStar /> Set as Default
+          </button>
           <Button onClick={handleSave} loading={saving} icon={<BiSave />}>Save Template</Button>
         </div>
       </div>
@@ -101,6 +133,7 @@ export default function CertificateTemplatePage() {
             <FormInput label="" value={templateName} onChange={(e) => setTemplateName(e.target.value)} name="template_name" />
 
             <h6 className="font-bold text-sm text-slate-700 mt-4 mb-3">Variables</h6>
+            <p className="text-[10px] text-slate-400 mb-2">Click to insert at cursor position</p>
             <div className="space-y-2">
               {certificateTemplateVariables.map((v) => (
                 <button key={v.value} onClick={() => insertVariable(v.value)} className="w-full text-left px-3 py-2 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-all font-medium">
@@ -113,17 +146,18 @@ export default function CertificateTemplatePage() {
         </div>
 
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-2xl shadow-card overflow-hidden">
-            {showPreview ? (
-              <div className="p-6 min-h-[500px]">
-                <div className="border border-slate-200 rounded-xl p-8 bg-white prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
-              </div>
-            ) : (
-              <div className="min-h-[500px]">
-                <ReactQuill theme="snow" value={content} onChange={setContent} modules={{ toolbar: [[{ header: [1, 2, 3, false] }], ['bold', 'italic', 'underline', 'strike'], [{ align: [] }], [{ list: 'ordered' }, { list: 'bullet' }], [{ indent: '-1' }, { indent: '+1' }], ['clean']] }} formats={['header', 'bold', 'italic', 'underline', 'strike', 'align', 'list', 'indent']} className="h-[440px]" />
-              </div>
-            )}
-          </div>
+          {showPreview ? (
+            <div className="bg-white rounded-2xl shadow-card p-6 min-h-[520px]">
+              <div className="border border-slate-200 rounded-xl p-8 bg-white prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+            </div>
+          ) : (
+            <TemplateEditor
+              value={content}
+              onChange={setContent}
+              placeholder="Start building your certificate template here. Use the variables panel on the left to insert patient data placeholders like {{patient_name}}, {{diagnosis}}, {{doctor_name}}, etc."
+              minHeight={480}
+            />
+          )}
         </div>
       </div>
     </div>

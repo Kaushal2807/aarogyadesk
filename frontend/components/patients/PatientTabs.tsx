@@ -9,7 +9,7 @@ interface PatientTabsProps {
 }
 
 const tabs = [
-  { href: '', label: 'History', icon: BiUser },
+  { href: '/history', label: 'History', icon: BiUser },
   { href: '/prescriptions', label: 'Prescriptions', icon: BiClipboard },
   { href: '/treatments', label: 'Treatments', icon: BiSolidPencil },
   { href: '/work-done', label: 'Work Done', icon: BiCheckCircle },
@@ -23,7 +23,8 @@ export default function PatientTabs({ uid }: PatientTabsProps) {
     <div className="flex flex-wrap gap-2 mb-6">
       {tabs.map((tab) => {
         const href = `${basePath}${tab.href}`;
-        const isActive = pathname === href || (tab.href === '' && pathname === `${basePath}`);
+        // Ensure accurate matching even if the URL has encoded spaces
+        const isActive = decodeURIComponent(pathname) === decodeURIComponent(href);
         return (
           <Link
             key={tab.href}

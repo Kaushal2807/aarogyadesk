@@ -8,13 +8,15 @@ import Button from '@/components/ui/Button';
 import { patientService } from '@/lib/services/patients';
 import { templateService } from '@/lib/services/templates';
 import { treatmentService } from '@/lib/services/treatments';
+import { clinicService } from '@/lib/services/clinic';
+import { auth } from '@/lib/auth';
 import {
   filterTemplatesByType,
   getDefaultTemplateContent,
   PrintTemplateType,
   renderPatientTemplate,
 } from '@/lib/template-render';
-import { Patient, PatientTreatment, Template } from '@/types';
+import { Patient, PatientTreatment, Template, Clinic } from '@/types';
 
 interface PatientTemplatePrintViewProps {
   type: PrintTemplateType;
@@ -29,6 +31,9 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | 'default'>('default');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [doctorName, setDoctorName] = useState<string>('');
+  const [clinicName, setClinicName] = useState<string>('');
+  const [clinic, setClinic] = useState<Clinic | null>(null);
 
   const title = type === 'case' ? 'Case Template' : 'Certificate Template';
   const switchLabel = type === 'case' ? 'Certificate Template' : 'Case Template';
@@ -50,8 +55,8 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
   const renderedContent = useMemo(() => {
     if (!patient) return '';
     const content = selectedTemplate?.template_content || getDefaultTemplateContent(type);
-    return renderPatientTemplate(content, patient, latestTreatment);
-  }, [latestTreatment, patient, selectedTemplate, type]);
+    return renderPatientTemplate(content, patient, latestTreatment, doctorName, clinicName);
+  }, [latestTreatment, patient, selectedTemplate, type, doctorName, clinicName]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -68,10 +73,32 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
         setTemplates(templateData);
         setLatestTreatment(treatmentData?.[0] || null);
 
-        const firstTemplate = filterTemplatesByType(templateData, type)[0];
-        setSelectedTemplateId(firstTemplate?.id || 'default');
-      } catch (err: any) {
-        setError(err.response?.data?.detail || 'Failed to load print template');
+        const typedList = filterTemplatesByType(templateData, type);
+        // Prefer doctor's saved default, else first match
+        const lsKey = type === 'case' ? 'default_case_template_id' : 'default_certificate_template_id';
+        const savedId = localStorage.getItem(lsKey);
+        const preferred = savedId ? typedList.find(t => t.id === Number(savedId)) : null;
+        const fallback = typedList[0];
+        const toUse = preferred || fallback;
+        setSelectedTemplateId(toUse?.id || 'default');
+
+        // ── Fetch doctor & clinic names ──────────────────────────────────────
+        // 1. Doctor name: use first clinic doctor name, fall back to logged-in user name
+        const [doctorsData, clinicData] = await Promise.all([
+          clinicService.getDoctors(),
+          clinicService.getMine(),
+        ]);
+
+        const primaryDoctor = doctorsData?.[0]?.doctor_name;
+        const loggedInUser = auth.getCurrentUser();
+        const resolvedDoctor = primaryDoctor || loggedInUser?.name || '';
+        setDoctorName(resolvedDoctor);
+        setClinicName(clinicData?.clinic_name || '');
+        setClinic(clinicData);
+
+      } catch (err: unknown) {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        setError(msg || 'Failed to load print template');
       } finally {
         setLoading(false);
       }
@@ -100,6 +127,11 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
               </div>
               <h1 className="text-xl font-bold text-slate-900 mt-1">{patient.name}</h1>
               <p className="text-sm text-slate-500">{patient.patient_uid} - {patient.contact_number || 'No contact number'}</p>
+              {(doctorName || clinicName) && (
+                <p className="text-xs text-slate-400 mt-1">
+                  {[doctorName, clinicName].filter(Boolean).join(' · ')}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
@@ -141,6 +173,24 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
       </div>
 
       <main className="print-page max-w-5xl mx-auto bg-white min-h-[1120px] shadow-sm border border-slate-200 px-10 py-8 print:max-w-none print:min-h-0 print:shadow-none print:border-0 print:px-0 print:py-0">
+        
+        {/* CLINIC LETTERHEAD HEADER FOR PRINT */}
+        <div className="hidden print:block mb-8 pb-4 border-b-2 border-slate-800">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wider">
+                {clinic?.clinic_name || clinicName}
+              </h1>
+              {doctorName && <p className="text-lg font-semibold text-slate-700 mt-1">Dr. {doctorName}</p>}
+            </div>
+            <div className="text-right text-sm text-slate-600 space-y-1">
+              {clinic?.address && <p>{clinic.address}</p>}
+              {clinic?.phone && <p>📞 {clinic.phone}</p>}
+              {clinic?.email && <p>✉️ {clinic.email}</p>}
+            </div>
+          </div>
+        </div>
+
         <div className="template-preview prose max-w-none" dangerouslySetInnerHTML={{ __html: renderedContent }} />
       </main>
 

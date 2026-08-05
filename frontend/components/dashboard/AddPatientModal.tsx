@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
@@ -87,11 +88,58 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
   }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    setForm((prev) => {
+      const updatedForm = { ...prev, [name]: value };
+      
+      // Handle payment logic
+      if (name === 'payment_status') {
+        if (value === 'paid') {
+          updatedForm.payment_pending = '0.00';
+        } else if (value === 'pending') {
+          updatedForm.payment_pending = updatedForm.total_amount;
+        }
+      }
+      
+      if (name === 'total_amount' && updatedForm.payment_status === 'pending') {
+        updatedForm.payment_pending = value;
+      }
+      
+      return updatedForm;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
+    if (!form.name.trim()) {
+      toast.error('Patient name is required');
+      return;
+    }
+    if (!form.age || isNaN(Number(form.age)) || Number(form.age) < 0) {
+      toast.error('Please enter a valid age');
+      return;
+    }
+    const phoneRegex = /^[0-9]{10,15}$/;
+    if (!form.contact_number || !phoneRegex.test(form.contact_number)) {
+      toast.error('Please enter a valid contact number (10-15 digits)');
+      return;
+    }
+    if (isNaN(Number(form.total_visit)) || Number(form.total_visit) < 1) {
+      toast.error('Total visit must be at least 1');
+      return;
+    }
+    if (isNaN(Number(form.total_amount)) || Number(form.total_amount) < 0) {
+      toast.error('Please enter a valid total amount');
+      return;
+    }
+    if (form.payment_status !== 'paid' && (isNaN(Number(form.payment_pending)) || Number(form.payment_pending) < 0)) {
+      toast.error('Please enter a valid pending amount');
+      return;
+    }
+
     const payload = {
       name: form.name,
       age: Number(form.age),
@@ -115,9 +163,27 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add New Patient" size="xl">
-      <form onSubmit={handleSubmit}>
-        <div className="py-4 space-y-4">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Add New Patient" 
+      size="xl"
+      footer={
+        <div className="flex justify-center">
+          <Button 
+            type="submit" 
+            form="add-patient-form"
+            size="lg" 
+            loading={saving} 
+            className="bg-primary-gradient shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-0.5"
+          >
+            Save Patient
+          </Button>
+        </div>
+      }
+    >
+      <form id="add-patient-form" onSubmit={handleSubmit}>
+        <div className="space-y-4">
           {/* Row 1: Patient ID, Full Name, Age */}
           <div className="grid grid-cols-3 gap-4">
             <FormInput 
@@ -130,20 +196,23 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
               className="bg-slate-100 text-slate-600 font-semibold"
             />
             <FormInput 
-              label="Name *" 
+              label="Name" 
               name="name" 
               value={form.name} 
               onChange={handleChange} 
               required 
               placeholder="Enter patient name" 
+              maxLength={100}
             />
             <FormInput 
-              label="Age *" 
+              label="Age" 
               name="age" 
               value={form.age} 
               onChange={handleChange} 
               required 
               type="number" 
+              min="0"
+              max="150"
               placeholder="Enter age" 
             />
           </div>
@@ -151,11 +220,14 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
           {/* Row 2: Contact Number, Address, Date of Visit */}
           <div className="grid grid-cols-3 gap-4">
             <FormInput 
-              label="Contact Number *" 
+              label="Contact Number" 
               name="contact_number" 
               value={form.contact_number} 
               onChange={handleChange} 
               required 
+              type="tel" 
+              pattern="[0-9]{10,15}" 
+              title="Please enter a valid phone number (10-15 digits)" 
               placeholder="Enter contact number" 
             />
             <FormInput 
@@ -164,6 +236,7 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
               value={form.address} 
               onChange={handleChange} 
               placeholder="Enter address" 
+              maxLength={250}
             />
             <FormInput 
               label="Date of Visit" 
@@ -259,28 +332,21 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
                 { value: 'paid', label: 'Paid' },
               ]}
             />
-            <FormInput 
-              label="Payment Pending (₹)" 
-              name="payment_pending" 
-              value={form.payment_pending} 
-              onChange={handleChange} 
-              type="number" 
-              step="0.01" 
-              placeholder="0.00"
-            />
+            {form.payment_status !== 'paid' && (
+              <FormInput 
+                label="Payment Pending (₹)" 
+                name="payment_pending" 
+                value={form.payment_pending} 
+                onChange={handleChange} 
+                type="number" 
+                step="0.01" 
+                placeholder="0.00"
+                disabled={form.payment_status === 'pending'}
+                readOnly={form.payment_status === 'pending'}
+                className={form.payment_status === 'pending' ? 'bg-slate-100 text-slate-600 font-semibold cursor-not-allowed opacity-70' : ''}
+              />
+            )}
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-center pt-6 mt-6 border-t border-slate-200">
-          <Button 
-            type="submit" 
-            size="lg" 
-            loading={saving} 
-            className="bg-primary-gradient shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-0.5"
-          >
-            Save Patient
-          </Button>
         </div>
       </form>
     </Modal>

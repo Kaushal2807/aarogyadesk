@@ -63,9 +63,27 @@ export default function EditPatientModal({ isOpen, onClose, patient, onSave, sav
   if (!patient) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Patient" size="xl">
-      <form onSubmit={handleSubmit}>
-        <div className="py-4 space-y-4">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Edit Patient" 
+      size="xl"
+      footer={
+        <div className="flex justify-center">
+          <Button 
+            type="submit"
+            form="edit-patient-form" 
+            size="lg" 
+            loading={saving}
+            className="bg-primary-gradient shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-0.5"
+          >
+            Update Patient
+          </Button>
+        </div>
+      }
+    >
+      <form id="edit-patient-form" onSubmit={handleSubmit}>
+        <div className="space-y-4">
           {/* Row 1: Patient ID, Full Name, Age */}
           <div className="grid grid-cols-3 gap-4">
             <FormInput 
@@ -78,20 +96,23 @@ export default function EditPatientModal({ isOpen, onClose, patient, onSave, sav
               className="bg-slate-100 text-slate-600 font-semibold" 
             />
             <FormInput 
-              label="Name *" 
+              label="Name" 
               name="name" 
               value={form.name || ''} 
               onChange={handleChange} 
               required 
               placeholder="Enter patient name"
+              maxLength={100}
             />
             <FormInput 
-              label="Age *" 
+              label="Age" 
               name="age" 
               value={form.age || ''} 
               onChange={handleChange} 
               required 
               type="number" 
+              min="0"
+              max="150"
               placeholder="Enter age"
             />
           </div>
@@ -99,11 +120,14 @@ export default function EditPatientModal({ isOpen, onClose, patient, onSave, sav
           {/* Row 2: Contact Number, Address, Date of Visit */}
           <div className="grid grid-cols-3 gap-4">
             <FormInput 
-              label="Contact Number *" 
+              label="Contact Number" 
               name="contact_number" 
               value={form.contact_number || ''} 
               onChange={handleChange} 
               required 
+              type="tel"
+              pattern="[0-9]{10,15}"
+              title="Please enter a valid phone number (10-15 digits)"
               placeholder="Enter contact number"
             />
             <FormInput 
@@ -112,6 +136,7 @@ export default function EditPatientModal({ isOpen, onClose, patient, onSave, sav
               value={form.address || ''} 
               onChange={handleChange} 
               placeholder="Enter address"
+              maxLength={250}
             />
             <FormInput 
               label="Date of Visit" 
@@ -217,18 +242,6 @@ export default function EditPatientModal({ isOpen, onClose, patient, onSave, sav
               placeholder="0.00"
             />
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-center pt-6 mt-6 border-t border-slate-200">
-          <Button 
-            type="submit" 
-            size="lg" 
-            loading={saving}
-            className="bg-primary-gradient shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-0.5"
-          >
-            Update Patient
-          </Button>
         </div>
       </form>
     </Modal>
