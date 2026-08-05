@@ -88,8 +88,12 @@ def run_migrations():
 
     alembic_cfg = Config("/app/alembic.ini")
     alembic_cfg.set_main_option("sqlalchemy.url", DATABASE_URL)
-    command.upgrade(alembic_cfg, "head")
-    log.info("✅ All migrations applied successfully!")
+    try:
+        command.upgrade(alembic_cfg, "head")
+        log.info("✅ All migrations applied successfully!")
+    except Exception as e:
+        log.error(f"❌ Migration failed: {e}", exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
