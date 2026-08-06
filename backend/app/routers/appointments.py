@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.deps import get_clinic_id
-from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, AppointmentResponse
+from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, AppointmentResponse, AppointmentFilter
 from app.services.appointment_service import (
     get_appointments, get_today_count, create_appointment,
     update_appointment, update_status,
@@ -11,20 +11,20 @@ from app.services.appointment_service import (
 router = APIRouter(prefix="/api/appointments", tags=["appointments"])
 
 
-@router.get("", response_model=list[AppointmentResponse])
+@router.post("/get", response_model=list[AppointmentResponse])
 def list_appointments(
-    date: str = Query(None, description="Filter by date (YYYY-MM-DD)"),
-    status: str = Query(None, description="Filter by status (pending/completed)"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    filters: AppointmentFilter,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
-    from datetime import datetime
-    appointment_date = None
-    if date:
-        appointment_date = datetime.strptime(date, "%Y-%m-%d").date()
-    return get_appointments(db, clinic_id, appointment_date=appointment_date, status=status, skip=skip, limit=limit)
+    return get_appointments(
+        db,
+        clinic_id,
+        appointment_date=filters.date,
+        status=filters.status,
+        skip=filters.skip,
+        limit=filters.limit,
+    )
 
 
 @router.get("/today-count")

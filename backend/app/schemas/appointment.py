@@ -38,3 +38,10 @@ class AppointmentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AppointmentFilter(BaseModel):
+    date: date
+    status: Optional[str] = None
+    skip: int = 0
+    limit: int = 100

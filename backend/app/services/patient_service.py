@@ -90,6 +90,8 @@ def generate_patient_uid(db: Session, clinic_id: int) -> str:
         except (ValueError, IndexError):
             pass
             
+    if max_number < 100:
+        max_number = 100  # Ensure IDs always start from 101
     next_number = max_number + 1
     return f"{prefix}-{next_number}"
 
