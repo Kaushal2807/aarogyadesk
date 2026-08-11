@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import LoginForm from '@/components/auth/LoginForm';
@@ -10,20 +10,25 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const loggingIn = useRef(false);
 
   const getRedirectPath = (user: User | null) => {
     if (user?.user_type === 'admin') return '/admin';
     return '/dashboard';
   };
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (on page load only, not after login)
   useEffect(() => {
-    if (auth.isAuthenticated()) {
-      router.push(getRedirectPath(auth.getCurrentUser()));
+    if (!loggingIn.current && auth.isAuthenticated()) {
+      router.replace(getRedirectPath(auth.getCurrentUser()));
+    } else {
+      setIsChecking(false);
     }
   }, [router]);
 
   const handleLogin = async (email: string, password: string) => {
+    loggingIn.current = true;
     setLoading(true);
     setError(null);
 
@@ -31,6 +36,7 @@ export default function LoginPage() {
       const data = await auth.login(email, password);
       router.push(getRedirectPath(data.user));
     } catch (err: any) {
+      loggingIn.current = false;
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
         setError(detail);
@@ -44,6 +50,9 @@ export default function LoginPage() {
     }
   };
 
+  // Don't render anything while checking auth to prevent flash
+  if (isChecking) return null;
+
   return (
     <div
       className="w-full max-w-[520px] bg-white border-2 border-indigo-100 p-4 sm:p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
@@ -53,7 +62,7 @@ export default function LoginPage() {
       <div className="flex justify-center mb-1">
         <Image
           src="/logo.png"
-          alt="Aarogyasdesk"
+          alt="Aarogyadesk"
           width={280}
           height={280}
           className="drop-shadow-md"

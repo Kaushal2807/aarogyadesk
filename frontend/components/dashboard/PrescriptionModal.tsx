@@ -4,9 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
+import SearchableSelect from '@/components/forms/SearchableSelect';
 import { BiTrash } from 'react-icons/bi';
 import { masterService } from '@/lib/services/master';
 import { prescriptionService } from '@/lib/services/prescriptions';
+import { printUrlSilently } from '@/lib/print-helper';
+import { toast } from 'react-hot-toast';
 
 interface PrescriptionModalProps {
   isOpen: boolean;
@@ -55,9 +58,11 @@ export default function PrescriptionModal({ isOpen, onClose, patientUid, patient
 
   useEffect(() => {
     if (isOpen) {
+      setPrescriptionDate(new Date().toISOString().split('T')[0]);
+      setRows([{ drug_id: '', dose_id: '', frequency_id: '', duration_id: '', quantity_id: '', instruction: '' }]);
       fetchMasterData();
     }
-  }, [isOpen, fetchMasterData]);
+  }, [isOpen, patientUid, fetchMasterData]);
 
   const addRow = () => {
     setRows([...rows, { drug_id: '', dose_id: '', frequency_id: '', duration_id: '', quantity_id: '', instruction: '' }]);
@@ -90,69 +95,151 @@ export default function PrescriptionModal({ isOpen, onClose, patientUid, patient
           instruction: row.instruction || undefined,
         })),
       });
+      toast.success('Prescription added successfully', {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
       onSave?.(res);
       onClose();
       if (print) {
         const id = res?.id;
         if (id && patientUid) {
           const url = `/patients/${patientUid}/prescriptions/${id}/print`;
-          window.open(url, '_blank');
+          printUrlSilently(url);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save prescription:', err);
+      toast.error(err.response?.data?.detail || 'Failed to save prescription');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Prescription" size="xl">
-      <div className="py-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <FormInput label="Patient ID" value={patientUid || ''} readOnly className="bg-slate-50" />
-          <FormInput label="Patient Name" value={patientName || ''} readOnly className="bg-slate-50" />
-          <FormInput label="Date" type="date" value={prescriptionDate} onChange={(e) => setPrescriptionDate(e.target.value)} />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add Prescription"
+      size="xl"
+      footer={
+        <div className="flex justify-center gap-3 w-full">
+          <Button type="button" onClick={() => handleSave(false)} loading={saving} disabled={saving || rows.length === 0}>
+            Save Prescription
+          </Button>
+          <Button type="button" variant="success" onClick={() => handleSave(true)} loading={saving} disabled={saving || rows.length === 0}>
+            Save & Download
+          </Button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-blue-100">
+      }
+    >
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/60 p-3.5 rounded-xl border border-slate-100">
+          <FormInput label="Patient ID" value={patientUid || ''} readOnly className="bg-white" />
+          <FormInput label="Patient Name" value={patientName || ''} readOnly className="bg-white" />
+          <FormInput label="Date" type="date" value={prescriptionDate} onChange={(e) => setPrescriptionDate(e.target.value)} className="bg-white" />
+        </div>
+
+        <div className="border border-slate-200 rounded-xl overflow-visible bg-white">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead className="bg-slate-100/80 border-b border-slate-200">
               <tr>
-                <th className="px-2 py-2 text-xs font-semibold text-slate-700">Medicine</th>
-                <th className="px-2 py-2 text-xs font-semibold text-slate-700">Dose</th>
-                <th className="px-2 py-2 text-xs font-semibold text-slate-700">Frequency</th>
-                <th className="px-2 py-2 text-xs font-semibold text-slate-700">Duration</th>
-                <th className="px-2 py-2 text-xs font-semibold text-slate-700">QTY</th>
-                <th className="px-2 py-2 text-xs font-semibold text-slate-700">Instruction</th>
-                <th className="w-10"></th>
+                <th className="px-3 py-2.5 font-bold text-slate-700">Medicine</th>
+                <th className="px-3 py-2.5 font-bold text-slate-700">Dose</th>
+                <th className="px-3 py-2.5 font-bold text-slate-700">Frequency</th>
+                <th className="px-3 py-2.5 font-bold text-slate-700">Duration</th>
+                <th className="px-3 py-2.5 font-bold text-slate-700">QTY</th>
+                <th className="px-3 py-2.5 font-bold text-slate-700">Instruction</th>
+                <th className="w-10 text-center"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {rows.map((row, i) => (
-                <tr key={i} className="border-b border-slate-100">
-                  <td className="px-1 py-1"><select className="w-full py-1.5 px-2 text-xs border-2 border-slate-200 rounded-lg focus:outline-none focus:border-primary-500" value={row.drug_id} onChange={(e) => updateRow(i, 'drug_id', e.target.value)}><option value="">Select</option>{drugs.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}</select></td>
-                  <td className="px-1 py-1"><select className="w-full py-1.5 px-2 text-xs border-2 border-slate-200 rounded-lg focus:outline-none focus:border-primary-500" value={row.dose_id} onChange={(e) => updateRow(i, 'dose_id', e.target.value)}><option value="">Dose</option>{doses.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}</select></td>
-                  <td className="px-1 py-1"><select className="w-full py-1.5 px-2 text-xs border-2 border-slate-200 rounded-lg focus:outline-none focus:border-primary-500" value={row.frequency_id} onChange={(e) => updateRow(i, 'frequency_id', e.target.value)}><option value="">Freq</option>{frequencies.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</select></td>
-                  <td className="px-1 py-1"><select className="w-full py-1.5 px-2 text-xs border-2 border-slate-200 rounded-lg focus:outline-none focus:border-primary-500" value={row.duration_id} onChange={(e) => updateRow(i, 'duration_id', e.target.value)}><option value="">Duration</option>{durations.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}</select></td>
-                  <td className="px-1 py-1"><select className="w-full py-1.5 px-2 text-xs border-2 border-slate-200 rounded-lg focus:outline-none focus:border-primary-500" value={row.quantity_id} onChange={(e) => updateRow(i, 'quantity_id', e.target.value)}><option value="">Qty</option>{quantities.map(q => <option key={q.value} value={q.value}>{q.label}</option>)}</select></td>
-                  <td className="px-1 py-1"><select className="w-full py-1.5 px-2 text-xs border-2 border-slate-200 rounded-lg focus:outline-none focus:border-primary-500" value={row.instruction} onChange={(e) => updateRow(i, 'instruction', e.target.value)}><option value="">Instr</option>{instructions.map(inst => <option key={inst.value} value={inst.value}>{inst.label}</option>)}</select></td>
-                  <td className="px-1 py-1"><button type="button" onClick={() => removeRow(i)} className="p-1 text-red-500 hover:bg-red-50 rounded"><BiTrash className="w-4 h-4" /></button></td>
+                <tr key={i} className="hover:bg-slate-50/50">
+                  <td className="px-2 py-2 min-w-[150px]">
+                    <SearchableSelect
+                      label=""
+                      value={row.drug_id}
+                      onChange={(val) => updateRow(i, 'drug_id', String(val))}
+                      options={drugs}
+                      placeholder="Select Medicine"
+                      searchable
+                    />
+                  </td>
+                  <td className="px-2 py-2 min-w-[110px]">
+                    <SearchableSelect
+                      label=""
+                      value={row.dose_id}
+                      onChange={(val) => updateRow(i, 'dose_id', String(val))}
+                      options={doses}
+                      placeholder="Select Dose"
+                      searchable
+                    />
+                  </td>
+                  <td className="px-2 py-2 min-w-[110px]">
+                    <SearchableSelect
+                      label=""
+                      value={row.frequency_id}
+                      onChange={(val) => updateRow(i, 'frequency_id', String(val))}
+                      options={frequencies}
+                      placeholder="Select Freq"
+                      searchable
+                    />
+                  </td>
+                  <td className="px-2 py-2 min-w-[110px]">
+                    <SearchableSelect
+                      label=""
+                      value={row.duration_id}
+                      onChange={(val) => updateRow(i, 'duration_id', String(val))}
+                      options={durations}
+                      placeholder="Select Duration"
+                      searchable
+                    />
+                  </td>
+                  <td className="px-2 py-2 min-w-[100px]">
+                    <SearchableSelect
+                      label=""
+                      value={row.quantity_id}
+                      onChange={(val) => updateRow(i, 'quantity_id', String(val))}
+                      options={quantities}
+                      placeholder="Select Qty"
+                      searchable
+                    />
+                  </td>
+                  <td className="px-2 py-2 min-w-[130px]">
+                    <SearchableSelect
+                      label=""
+                      value={row.instruction}
+                      onChange={(val) => updateRow(i, 'instruction', String(val))}
+                      options={instructions}
+                      placeholder="Select Instruction"
+                      searchable
+                    />
+                  </td>
+                  <td className="px-2 py-2 text-center">
+                    <button type="button" onClick={() => removeRow(i)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete row">
+                      <BiTrash className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {rows.length === 0 && (
+            <div className="text-center py-6 text-xs text-slate-400">
+              No drugs added yet. Click <strong>+ Add Drug</strong> below to start building the prescription.
+            </div>
+          )}
         </div>
+
         {loading ? (
-          <div className="mt-2 text-center text-sm text-slate-400 py-2">Loading master data...</div>
+          <div className="text-center text-xs text-slate-400 py-1">Loading master data...</div>
         ) : (
-        <button type="button" onClick={addRow} className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border-2 border-primary-500 text-primary-500 rounded-lg hover:bg-primary-500 hover:text-white transition-all">
-          + Add Drug
-        </button>
+          <div className="flex justify-start">
+            <button type="button" onClick={addRow} className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border border-primary-500 text-primary-600 rounded-lg hover:bg-primary-50 transition-all shadow-sm">
+              + Add Drug
+            </button>
+          </div>
         )}
-      </div>
-      <div className="flex justify-center gap-3 pt-4 border-t border-slate-100 mt-4">
-        <Button type="button" onClick={() => handleSave(false)} loading={saving} disabled={saving || rows.length === 0}>Save Prescription</Button>
-        <Button type="button" variant="success" onClick={() => handleSave(true)} loading={saving} disabled={saving || rows.length === 0}>Save & Print</Button>
       </div>
     </Modal>
   );

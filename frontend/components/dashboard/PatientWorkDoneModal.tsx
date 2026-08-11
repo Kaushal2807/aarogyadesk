@@ -5,8 +5,10 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
 import FormTextarea from '@/components/forms/FormTextarea';
-import FormSelect from '@/components/forms/FormSelect';
+import SearchableSelect from '@/components/forms/SearchableSelect';
 import { workDoneService } from '@/lib/services/work-done';
+
+import { toast } from 'react-hot-toast';
 
 interface PatientWorkDoneModalProps {
   isOpen: boolean;
@@ -38,9 +40,12 @@ export default function PatientWorkDoneModal({ isOpen, onClose, patientUid, pati
 
   useEffect(() => {
     if (isOpen) {
+      setWorkDoneId('');
+      setDescription('');
+      setWorkDate(new Date().toISOString().split('T')[0]);
       fetchWorkTypes();
     }
-  }, [isOpen, fetchWorkTypes]);
+  }, [isOpen, patientUid, fetchWorkTypes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +59,14 @@ export default function PatientWorkDoneModal({ isOpen, onClose, patientUid, pati
         description: description || undefined,
         work_date: workDate,
       });
+      toast.success('Work done added successfully', {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
       onSave?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save work done:', err);
+      toast.error(err.response?.data?.detail || 'Failed to save work done');
     } finally {
       setSaving(false);
     }
@@ -73,7 +82,15 @@ export default function PatientWorkDoneModal({ isOpen, onClose, patientUid, pati
           {loading ? (
             <div className="flex items-center text-sm text-slate-400 py-2">Loading work types...</div>
           ) : (
-          <FormSelect label="Work Done" value={workDoneId} onChange={(e) => setWorkDoneId(e.target.value)} options={workDoneOptions} placeholder="Select Work" required />
+            <SearchableSelect 
+              label="Work Done *" 
+              value={workDoneId} 
+              onChange={(val) => setWorkDoneId(String(val))} 
+              options={workDoneOptions} 
+              placeholder="Select Work" 
+              searchable 
+              required 
+            />
           )}
         </div>
         <div className="mt-4">

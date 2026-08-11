@@ -164,8 +164,11 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
                 Edit
               </Link>
 
-              <Button onClick={() => window.print()} icon={<BiPrinter />}>
-                Print
+              <Button onClick={() => {
+                window.onafterprint = () => { try { window.close(); } catch {} };
+                window.print();
+              }} icon={<BiPrinter />}>
+                Print / Download
               </Button>
             </div>
           </div>
@@ -196,6 +199,14 @@ export default function PatientTemplatePrintView({ type }: PatientTemplatePrintV
 
       <style jsx global>{`
         @media print {
+          body, html {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
           .print-controls {
             display: none !important;
           }

@@ -11,10 +11,11 @@ import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import { medicineService } from '@/lib/services/medicine';
 import { Medicine } from '@/types';
+import TableSkeleton from '@/components/ui/TableSkeleton';
 import { toast } from 'react-hot-toast';
 
 export default function MedicinePage() {
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -97,7 +98,7 @@ export default function MedicinePage() {
       setShowAddModal(false);
       setAddForm({ name: '', quantity: '0', threshold_level: '50', notes: '' });
       
-      toast.success('✓ Medicine added successfully', {
+      toast.success('Medicine added successfully', {
         duration: 3000,
         style: { background: '#10b981', color: '#fff', fontWeight: '500' }
       });
@@ -124,7 +125,7 @@ export default function MedicinePage() {
       return;
     }
     
-    console.log('✓ Edit - Medicine ID:', medicineIdNum, '| Name:', medicine.name);
+    console.log('Edit - Medicine ID:', medicineIdNum, '| Name:', medicine.name);
     setEditingMedicineId(medicineIdNum);
     setEditForm({
       name: medicine.name,
@@ -162,7 +163,7 @@ export default function MedicinePage() {
       setShowEditModal(false);
       setEditingMedicineId(null);
       
-      toast.success('✓ Medicine edited successfully', {
+      toast.success('Medicine edited successfully', {
         duration: 3000,
         style: { background: '#10b981', color: '#fff', fontWeight: '500' }
       });
@@ -180,7 +181,8 @@ export default function MedicinePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
+    <div className="h-full overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         {/* Search — left */}
@@ -205,10 +207,7 @@ export default function MedicinePage() {
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3">Loading medicines...</span>
-            </div>
+            <TableSkeleton rows={5} cols={5} />
           ) : medicines.length === 0 ? (
             <EmptyState message="No medicines found" />
           ) : (
@@ -260,50 +259,52 @@ export default function MedicinePage() {
               </table>
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {filteredMedicines.length > 0 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
                   <span className="text-sm text-slate-600">{getPaginationDisplay()}</span>
-                  <div className="flex gap-2 items-center">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <BiChevronLeft className="w-4 h-4" />
-                    </button>
-                    
-                    <div className="flex gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else {
-                          pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                        }
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
-                              currentPage === pageNum
-                                ? 'bg-primary-500 text-white'
-                                : 'border border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
+                  {totalPages > 1 && (
+                    <div className="flex gap-2 items-center">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        <BiChevronLeft className="w-4 h-4" />
+                      </button>
+                      
+                      <div className="flex gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else {
+                            pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                currentPage === pageNum
+                                  ? 'bg-primary-500 text-white'
+                                  : 'border border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        <BiChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
-                    
-                    <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <BiChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               )}
             </>
@@ -316,7 +317,7 @@ export default function MedicinePage() {
         <form onSubmit={handleAddMedicine}>
           <div className="space-y-4 py-4">
             <FormInput 
-              label="Medicine Name *" 
+              label="Medicine Name" 
               name="name"
               value={addForm.name} 
               onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} 
@@ -325,7 +326,7 @@ export default function MedicinePage() {
             />
             <div className="grid grid-cols-2 gap-4">
               <FormInput 
-                label="Quantity *" 
+                label="Quantity" 
                 name="quantity"
                 value={addForm.quantity} 
                 onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })} 
@@ -334,7 +335,7 @@ export default function MedicinePage() {
                 placeholder="0"
               />
               <FormInput 
-                label="Threshold Level *" 
+                label="Threshold Level" 
                 name="threshold_level"
                 value={addForm.threshold_level} 
                 onChange={(e) => setAddForm({ ...addForm, threshold_level: e.target.value })} 
@@ -364,7 +365,7 @@ export default function MedicinePage() {
           <form onSubmit={handleEditMedicine}>
             <div className="space-y-4 py-4">
               <FormInput 
-                label="Medicine Name *" 
+                label="Medicine Name" 
                 name="name"
                 value={editForm.name} 
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} 
@@ -373,7 +374,7 @@ export default function MedicinePage() {
               />
               <div className="grid grid-cols-2 gap-4">
                 <FormInput 
-                  label="Quantity *" 
+                  label="Quantity" 
                   name="quantity"
                   value={editForm.quantity} 
                   onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })} 
@@ -382,7 +383,7 @@ export default function MedicinePage() {
                   placeholder="0"
                 />
                 <FormInput 
-                  label="Threshold Level *" 
+                  label="Threshold Level" 
                   name="threshold_level"
                   value={editForm.threshold_level} 
                   onChange={(e) => setEditForm({ ...editForm, threshold_level: e.target.value })} 
@@ -442,6 +443,7 @@ export default function MedicinePage() {
           </div>
         )}
       </Modal>
+    </div>
     </div>
   );
 }

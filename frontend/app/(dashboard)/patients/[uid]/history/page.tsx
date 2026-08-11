@@ -56,7 +56,8 @@ export default function PatientHistoryPage() {
   if (!patient) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto">
+        <div className="space-y-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl shadow-card p-4 text-center">
@@ -80,6 +81,7 @@ export default function PatientHistoryPage() {
         </div>
 
         <MedicalInfoCard patient={patient} />
+    </div>
     </div>
   );
 }

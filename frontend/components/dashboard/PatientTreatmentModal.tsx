@@ -10,6 +10,8 @@ import ToothChart from '@/components/shared/ToothChart';
 import { treatmentService } from '@/lib/services/treatments';
 import { masterTreatmentService } from '@/lib/services/master-treatment';
 
+import { toast } from 'react-hot-toast';
+
 interface PatientTreatmentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -47,9 +49,14 @@ export default function PatientTreatmentModal({ isOpen, onClose, patientUid, pat
 
   useEffect(() => {
     if (isOpen) {
+      setDiagnosisId('');
+      setTreatmentId('');
+      setEstimates('');
+      setRemarks('');
+      setToothData({ upperRight: '', upperLeft: '', lowerRight: '', lowerLeft: '' });
       fetchMasterData();
     }
-  }, [isOpen, fetchMasterData]);
+  }, [isOpen, patientUid, fetchMasterData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +75,9 @@ export default function PatientTreatmentModal({ isOpen, onClose, patientUid, pat
         tooth_lower_right: toothData.lowerRight || undefined,
         tooth_lower_left: toothData.lowerLeft || undefined,
       });
+      toast.success('Treatment plan added successfully', {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
       onSave?.();
       setDiagnosisId('');
       setTreatmentId('');
@@ -75,8 +85,9 @@ export default function PatientTreatmentModal({ isOpen, onClose, patientUid, pat
       setRemarks('');
       setToothData({ upperRight: '', upperLeft: '', lowerRight: '', lowerLeft: '' });
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save treatment:', err);
+      toast.error(err.response?.data?.detail || 'Failed to save treatment plan');
     } finally {
       setSaving(false);
     }

@@ -36,10 +36,11 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
     payment_status: 'pending',
     payment_pending: '0.00',
   });
+  const [contactError, setContactError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      // Generate patient UID and reset form
+      setContactError('');
       const generateAndReset = async () => {
         try {
           const uid = await patientService.generateUid();
@@ -87,6 +88,18 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
     }
   }, [isOpen]);
 
+  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '');
+    setForm((prev) => ({ ...prev, contact_number: val }));
+    if (val.length === 0) {
+      setContactError('Contact number is required');
+    } else if (val.length < 10) {
+      setContactError('Contact Number must be 10 digits');
+    } else {
+      setContactError('');
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
@@ -122,9 +135,9 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
       toast.error('Please enter a valid age');
       return;
     }
-    const phoneRegex = /^[0-9]{10,15}$/;
-    if (!form.contact_number || !phoneRegex.test(form.contact_number)) {
-      toast.error('Please enter a valid contact number (10-15 digits)');
+    if (!form.contact_number || form.contact_number.length !== 10) {
+      setContactError('Contact Number must be 10 digits');
+      toast.error('Contact number must be exactly 10 digits');
       return;
     }
     if (isNaN(Number(form.total_visit)) || Number(form.total_visit) < 1) {
@@ -219,17 +232,24 @@ export default function AddPatientModal({ isOpen, onClose, onSave, saving }: Add
 
           {/* Row 2: Contact Number, Address, Date of Visit */}
           <div className="grid grid-cols-3 gap-4">
-            <FormInput 
-              label="Contact Number" 
-              name="contact_number" 
-              value={form.contact_number} 
-              onChange={handleChange} 
-              required 
-              type="tel" 
-              pattern="[0-9]{10,15}" 
-              title="Please enter a valid phone number (10-15 digits)" 
-              placeholder="Enter contact number" 
-            />
+            <div>
+              <FormInput 
+                label="Contact Number" 
+                name="contact_number" 
+                value={form.contact_number} 
+                onChange={handleContactChange} 
+                required 
+                type="tel"
+                maxLength={10}
+                placeholder="Enter 10-digit number" 
+              />
+              {contactError && (
+                <p className="mt-1 text-xs font-medium text-red-500">{contactError}</p>
+              )}
+              {!contactError && form.contact_number.length === 10 && (
+                <p className="mt-1 text-xs font-medium text-emerald-500">✓ Valid</p>
+              )}
+            </div>
             <FormInput 
               label="Address" 
               name="address" 

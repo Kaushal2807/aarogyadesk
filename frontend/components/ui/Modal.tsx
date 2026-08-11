@@ -8,7 +8,8 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  minHeight?: string;
   footer?: ReactNode;
 }
 
@@ -16,10 +17,12 @@ const sizeClasses: Record<string, string> = {
   sm: 'max-w-md',
   md: 'max-w-lg',
   lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
+  xl: 'max-w-5xl',
+  '2xl': 'max-w-6xl',
+  '3xl': 'max-w-7xl',
 };
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md', footer }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, size = 'md', minHeight, footer }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -48,7 +51,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
       />
       {/* Modal Content */}
       <div
-        className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl animate-[modalSlideIn_0.3s_ease-out] flex flex-col max-h-[90vh] overflow-hidden`}
+        className={`relative w-full ${sizeClasses[size]} ${minHeight || ''} bg-white rounded-2xl shadow-2xl animate-[modalSlideIn_0.3s_ease-out] flex flex-col max-h-[92vh] overflow-hidden`}
       >
         {/* Header */}
         {title && (
@@ -63,7 +66,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
           </div>
         )}
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-6 min-h-0">
           {children}
         </div>
         {/* Footer */}

@@ -6,6 +6,8 @@ import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
 import FormTextarea from '@/components/forms/FormTextarea';
 
+import { toast } from 'react-hot-toast';
+
 interface CertificateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,9 +23,17 @@ export default function CertificateModal({ isOpen, onClose, patientUid, patientN
   const [treatmentTo, setTreatmentTo] = useState('');
   const [advice, setAdvice] = useState('');
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast.success('Certificate generated successfully', {
+      style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+    });
+    onClose();
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Generate Certificate" size="md">
-      <form onSubmit={(e) => { e.preventDefault(); onClose(); }}>
+      <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput label="Patient ID" value={patientUid || ''} readOnly className="bg-slate-50" />
           <FormInput label="Patient Name" value={patientName || ''} readOnly className="bg-slate-50" />

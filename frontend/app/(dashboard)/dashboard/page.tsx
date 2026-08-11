@@ -1,31 +1,32 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { BiCreditCard, BiSolidUserPlus, BiSolidCloudLightning, BiClipboard, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+import { BiSolidUserPlus, BiChevronLeft, BiChevronRight, BiCalendar } from 'react-icons/bi';
 import { BsPeopleFill, BsCreditCardFill, BsCalendarEventFill } from 'react-icons/bs';
 import KPICard from '@/components/ui/KPICard';
 import Badge from '@/components/ui/Badge';
 import SearchInput from '@/components/ui/SearchInput';
 import EmptyState from '@/components/ui/EmptyState';
 import StatusBadge from '@/components/ui/StatusBadge';
-import Dropdown from '@/components/ui/Dropdown';
-import DropdownItem from '@/components/ui/DropdownItem';
+import TableSkeleton from '@/components/ui/TableSkeleton';
+
 import PatientActionsCell from '@/components/shared/PatientActionsCell';
 import AddPatientModal from '@/components/dashboard/AddPatientModal';
 import EditPatientModal from '@/components/dashboard/EditPatientModal';
-import TreatmentPlanModal from '@/components/dashboard/TreatmentPlanModal';
+
 import PatientTreatmentModal from '@/components/dashboard/PatientTreatmentModal';
 import PrescriptionModal from '@/components/dashboard/PrescriptionModal';
-import WorkDoneModal from '@/components/dashboard/WorkDoneModal';
+
 import PatientWorkDoneModal from '@/components/dashboard/PatientWorkDoneModal';
 import CertificateModal from '@/components/dashboard/CertificateModal';
 import { patientService } from '@/lib/services/patients';
+import { printUrlSilently } from '@/lib/print-helper';
 import { Patient, PatientCount, PatientCreate, PatientUpdate } from '@/types';
 import { toast } from 'react-hot-toast';
 
 export default function DashboardPage() {
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
   const [patients, setPatients] = useState<Patient[]>([]);
   const [, setPatientCount] = useState<PatientCount>({ total: 0, paid: 0, partial: 0, pending: 0 });
   const [search, setSearch] = useState('');
@@ -34,22 +35,33 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showTreatmentPlanModal, setShowTreatmentPlanModal] = useState(false);
+
   const [showTreatmentModal, setShowTreatmentModal] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
-  const [showWorkDoneModal, setShowWorkDoneModal] = useState(false);
+
   const [showPatientWorkModal, setShowPatientWorkModal] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [actionPatient, setActionPatient] = useState<Patient | null>(null);
-  const router = useRouter();
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const openDatePicker = () => {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof (el as any).showPicker === 'function') {
+      (el as any).showPicker();
+    } else {
+      el.click();
+    }
+  };
+
 
   // Filter states
   const today = new Date().toISOString().split('T')[0];
   const currentMonth = new Date().getMonth(); // 0-11
   const currentYear = new Date().getFullYear();
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('paid');
   const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -90,23 +102,21 @@ export default function DashboardPage() {
     setShowEditModal(true);
   };
 
-  const handleAddPatient = async (data: Partial<Patient>) => {
-    try {
-      const created = await patientService.create(data as PatientCreate);
-      // Optimistically add patient to list without refetching
-      setPatients(prev => [created, ...prev]);
-      setShowAddModal(false);
-      toast.success('✓ Patient added successfully', {
-        duration: 3000,
-        style: {
-          background: '#10b981',
-          color: '#fff',
-          fontWeight: '500'
-        }
+  const handleAddPatient = (data: Partial<Patient>) => {
+    // Close modal immediately — don't wait for API
+    setShowAddModal(false);
+
+    patientService.create(data as PatientCreate)
+      .then((created) => {
+        setPatients(prev => [created, ...prev]);
+        toast.success('Patient added successfully', {
+          duration: 3000,
+          style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+        });
+      })
+      .catch((err: any) => {
+        toast.error(err.response?.data?.detail || 'Failed to add patient');
       });
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Failed to add patient');
-    }
   };
 
   const handleEditPatient = async (data: Partial<Patient>) => {
@@ -117,7 +127,7 @@ export default function DashboardPage() {
       setPatients(prev => prev.map(p => p.patient_uid === selectedPatient.patient_uid ? updated : p));
       setShowEditModal(false);
       setSelectedPatient(null);
-      toast.success('✓ Patient updated successfully', {
+      toast.success('Patient updated successfully', {
         duration: 3000,
         style: {
           background: '#10b981',
@@ -130,16 +140,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleTreatmentPlan = () => {
-    // Modal handles saving internally now
-  };
 
-  const handleWorkDone = () => {
-    // Modal handles saving internally now
-  };
 
   const handlePrintCase = (patient: Patient) => {
-    window.open(`/patients/${patient.patient_uid}/case-details/print`, '_blank');
+    printUrlSilently(`/patients/${patient.patient_uid}/case-details/print`);
   };
 
   // Calculate statistics based on filters
@@ -189,25 +193,25 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 mt-6 mb-4 relative">
+    <div className="flex flex-col h-full px-4 pt-4 pb-2 max-w-[1400px] mx-auto overflow-hidden">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 shrink-0">
         <KPICard
           title="Total Patients"
           subtitle="Patients registered"
           value={getTotalPatientsByMonth()}
           icon={<BsPeopleFill />}
-          bgClass="bg-indigo-50"
-          iconBgClass="bg-indigo-600"
-          textClass="text-indigo-800"
+          bgClass="bg-gradient-to-br from-indigo-600 to-indigo-800"
+          iconBgClass="bg-white/20"
+          textClass="text-white"
           filter={
-            <select 
+            <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="border border-indigo-300 rounded-lg px-2 py-1 text-sm bg-white text-indigo-700 cursor-pointer font-medium"
+              className="border border-white/30 rounded-lg px-2 py-1 text-sm bg-white/20 text-white cursor-pointer font-medium backdrop-blur-sm w-auto max-w-[110px]"
             >
               {monthNames.map((m, idx) => (
-                <option key={idx} value={idx}>{m}</option>
+                <option key={idx} value={idx} className="text-indigo-900 bg-white">{m}</option>
               ))}
             </select>
           }
@@ -217,17 +221,20 @@ export default function DashboardPage() {
           subtitle="Patients"
           value={getPaidPatientCount()}
           icon={<BsCreditCardFill />}
-          bgClass="bg-emerald-50"
-          iconBgClass="bg-emerald-600"
-          textClass="text-emerald-800"
+          bgClass={selectedPaymentStatus === 'pending'
+            ? 'bg-gradient-to-br from-red-500 to-red-700'
+            : 'bg-gradient-to-br from-emerald-500 to-emerald-700'}
+          iconBgClass="bg-white/20"
+          textClass="text-white"
           filter={
-            <select 
+            <select
               value={selectedPaymentStatus}
               onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-              className="border border-emerald-300 rounded-lg px-2 py-1 text-sm bg-white text-emerald-700 cursor-pointer font-medium"
+              className="border border-white/30 rounded-lg px-2 py-1 text-sm text-white cursor-pointer font-medium w-auto max-w-[115px]"
+              style={{ background: 'rgba(255,255,255,0.2)' }}
             >
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
+              <option value="paid" className="text-slate-800 bg-white">Paid</option>
+              <option value="pending" className="text-slate-800 bg-white">Pending</option>
             </select>
           }
         />
@@ -236,16 +243,28 @@ export default function DashboardPage() {
           subtitle="Patients visited"
           value={getTodayPatients()}
           icon={<BsCalendarEventFill />}
-          bgClass="bg-purple-50"
-          iconBgClass="bg-purple-600"
-          textClass="text-purple-800"
+          bgClass="bg-gradient-to-br from-purple-600 to-purple-800"
+          iconBgClass="bg-white/20"
+          textClass="text-white"
           filter={
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="border border-purple-300 rounded-lg px-2 py-1 text-sm bg-white text-purple-700 cursor-pointer font-medium"
-            />
+            <div className="relative flex-shrink-0">
+              <button
+                type="button"
+                onClick={openDatePicker}
+                className="flex items-center gap-1.5 px-2 py-1 border border-white/30 rounded-lg text-white text-xs font-medium"
+                style={{ background: 'rgba(255,255,255,0.15)' }}
+              >
+                <BiCalendar className="w-3.5 h-3.5" />
+                <span>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Date'}</span>
+              </button>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="sr-only"
+              />
+            </div>
           }
         />
       </div>
@@ -259,7 +278,7 @@ export default function DashboardPage() {
       )}
 
       {/* Patient Records Panel */}
-      <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-card overflow-hidden flex flex-col flex-1 min-h-0">
         {/* Panel Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
           <div className="flex items-center gap-2">
@@ -283,38 +302,19 @@ export default function DashboardPage() {
               <BiSolidUserPlus className="w-4 h-4" /> Add New Patient
             </button>
 
-            <Dropdown
-              trigger={
-                <span className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary-gradient text-white rounded-lg shadow-btn-primary hover:shadow-btn-primary-hover transition-all cursor-pointer">
-                  <BiSolidCloudLightning className="w-4 h-4" /> Quick Actions
-                </span>
-              }
-            >
-              <DropdownItem onClick={() => setShowTreatmentPlanModal(true)} icon={<BiClipboard className="text-primary-500" />}>
-                Treatment Plan
-              </DropdownItem>
-              <DropdownItem onClick={() => setShowWorkDoneModal(true)} icon={<BiCreditCard className="text-emerald-500" />}>
-                Work Done
-              </DropdownItem>
-                        <DropdownItem onClick={() => { router.push('/prescription-master'); }} icon={<BiCreditCard className="text-emerald-500" />}>
-                          Prescription
-                        </DropdownItem>
-            </Dropdown>
+
           </div>
         </div>
 
         {/* Patient Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-y-auto overflow-x-auto flex-1 min-h-0">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3">Loading patients...</span>
-            </div>
+            <TableSkeleton rows={6} cols={5} />
           ) : patients.length === 0 ? (
             <EmptyState message={search ? 'No patients found for your search' : 'No patients yet. Add your first patient!'} />
           ) : (
             <table className="cms-table w-full">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr>
                   <th>Patient ID</th>
                   <th>Name</th>
@@ -373,7 +373,7 @@ export default function DashboardPage() {
               >
                 <BiChevronLeft className="w-4 h-4" /> Previous
               </button>
-              
+
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
@@ -390,11 +390,10 @@ export default function DashboardPage() {
                     <button
                       key={pageNum}
                       onClick={() => handlePageClick(pageNum)}
-                      className={`px-2.5 py-1 text-sm font-medium rounded-lg transition-colors ${
-                        currentPage === pageNum
-                          ? 'bg-primary-gradient text-white shadow-btn-primary'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
+                      className={`px-2.5 py-1 text-sm font-medium rounded-lg transition-colors ${currentPage === pageNum
+                        ? 'bg-primary-gradient text-white shadow-btn-primary'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
                     >
                       {pageNum}
                     </button>
@@ -417,10 +416,10 @@ export default function DashboardPage() {
       {/* Modals */}
       <AddPatientModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSave={handleAddPatient} />
       <EditPatientModal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedPatient(null); }} patient={selectedPatient} onSave={handleEditPatient} />
-      <TreatmentPlanModal isOpen={showTreatmentPlanModal} onClose={() => setShowTreatmentPlanModal(false)} onSave={handleTreatmentPlan} />
+
       <PatientTreatmentModal isOpen={showTreatmentModal} onClose={() => { setShowTreatmentModal(false); setActionPatient(null); }} patientUid={actionPatient?.patient_uid} patientName={actionPatient?.name} onSave={fetchPatients} />
       <PrescriptionModal isOpen={showPrescriptionModal} onClose={() => { setShowPrescriptionModal(false); setActionPatient(null); }} patientUid={actionPatient?.patient_uid} patientName={actionPatient?.name} onSave={fetchPatients} />
-      <WorkDoneModal isOpen={showWorkDoneModal} onClose={() => setShowWorkDoneModal(false)} onSave={handleWorkDone} />
+
       <PatientWorkDoneModal isOpen={showPatientWorkModal} onClose={() => { setShowPatientWorkModal(false); setActionPatient(null); }} patientUid={actionPatient?.patient_uid} patientName={actionPatient?.name} onSave={fetchPatients} />
       <CertificateModal isOpen={showCertificateModal} onClose={() => { setShowCertificateModal(false); setActionPatient(null); }} patientUid={actionPatient?.patient_uid} patientName={actionPatient?.name} />
     </div>

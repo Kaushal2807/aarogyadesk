@@ -10,6 +10,7 @@ import FormInput from '@/components/forms/FormInput';
 import TemplateEditor from '@/components/templates/TemplateEditor';
 import { templateService } from '@/lib/services/templates';
 import { caseTemplateVariables, defaultCaseTemplateContent } from '@/lib/template-render';
+import { toast } from 'react-hot-toast';
 import { Template } from '@/types';
 
 export default function CaseTemplatePage() {
@@ -64,8 +65,13 @@ export default function CaseTemplatePage() {
         setTemplates(prev => [...prev, created]);
       }
       setMessage('Template saved successfully!');
+      toast.success('Case template saved successfully', {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
     } catch (err: any) {
-      setMessage(err.response?.data?.detail || 'Failed to save template');
+      const errMsg = err.response?.data?.detail || 'Failed to save template';
+      setMessage(errMsg);
+      toast.error(errMsg);
     } finally {
       setSaving(false);
     }
@@ -76,6 +82,9 @@ export default function CaseTemplatePage() {
     localStorage.setItem('default_case_template_id', String(selectedTemplateId));
     setDefaultTemplateId(selectedTemplateId);
     setMessage('✓ Set as default case template for printing!');
+    toast.success('Set as default case template', {
+      style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+    });
     setTimeout(() => setMessage(null), 3000);
   };
 
@@ -89,7 +98,8 @@ export default function CaseTemplatePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
+    <div className="h-full overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <h5 className="font-bold text-slate-800 text-lg">Case Detail Template Builder</h5>
@@ -162,6 +172,7 @@ export default function CaseTemplatePage() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

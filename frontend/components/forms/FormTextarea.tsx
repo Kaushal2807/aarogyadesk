@@ -7,10 +7,13 @@ interface FormTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> 
 }
 
 export default function FormTextarea({ label, error, required, id, className = '', ...props }: FormTextareaProps) {
+  const displayLabel = label ? label.replace(/\s*\*+$/, '').trim() : '';
+  const isRequired = required || (label && label.includes('*'));
+
   return (
     <div className={className}>
       <label htmlFor={id} className="block text-sm font-semibold text-slate-600 mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
+        {displayLabel} {isRequired && <span className="text-red-500">*</span>}
       </label>
       <textarea
         id={id}

@@ -5,12 +5,21 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle } from 'react-icons/bi';
+import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle, BiGridAlt } from 'react-icons/bi';
 import { Clinic } from '@/types';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: <BiBarChart className="w-4 h-4" /> },
   { href: '/appointments', label: 'Appointments', icon: <BiCalendar className="w-4 h-4" /> },
+];
+
+const masterLinks = [
+  { href: '/master/treatment-plan', label: 'Treatment Plan' },
+  { href: '/master/work-done', label: 'Work Done' },
+  { href: '/prescription-master', label: 'Prescription' },
+];
+
+const navLinks2 = [
   { href: '/reports', label: 'Reports', icon: <BiBarChart className="w-4 h-4" /> },
   { href: '/expenses', label: 'Expenses', icon: <BiWallet className="w-4 h-4" /> },
   { href: '/medicine', label: 'Medicine', icon: <BiCapsule className="w-4 h-4" /> },
@@ -26,6 +35,7 @@ export default function AppHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showMaster, setShowMaster] = useState(false);
   const [user, setUser] = useState<ReturnType<typeof auth.getCurrentUser>>(null);
   const [clinic, setClinic] = useState<Clinic | null>(null);
 
@@ -109,6 +119,59 @@ export default function AppHeader() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={true}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  isActive(link.href)
+                    ? 'bg-primary-gradient text-white shadow-btn-primary'
+                    : 'text-slate-600 hover:text-[#003D7A] hover:bg-slate-100'
+                }`}
+              >
+                {link.icon}
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Master Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setShowMaster(true)}
+              onMouseLeave={() => setShowMaster(false)}
+            >
+              <button
+                onClick={() => setShowMaster(!showMaster)}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  pathname.startsWith('/master') || pathname.startsWith('/prescription-master')
+                    ? 'bg-primary-gradient text-white shadow-btn-primary'
+                    : 'text-slate-600 hover:text-[#003D7A] hover:bg-slate-100'
+                }`}
+              >
+                <BiGridAlt className="w-4 h-4" />
+                Master
+              </button>
+              {showMaster && (
+                <div className="absolute top-full left-0 pt-1 w-52">
+                  <div className="bg-white rounded-xl shadow-lg border border-slate-100 py-1 animate-[dropdownFadeIn_0.2s_ease]">
+                    {masterLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        prefetch={true}
+                        onClick={() => setShowMaster(false)}
+                        className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary-600 transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {navLinks2.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                prefetch={true}
                 className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
                   isActive(link.href)
                     ? 'bg-primary-gradient text-white shadow-btn-primary'
@@ -144,6 +207,7 @@ export default function AppHeader() {
                       <Link
                         key={link.href}
                         href={link.href}
+                        prefetch={true}
                         onClick={() => setShowTemplates(false)}
                         className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary-600 transition-colors"
                       >
@@ -157,6 +221,7 @@ export default function AppHeader() {
 
             <Link
               href="/support"
+              prefetch={true}
               className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
                 isActive('/support')
                   ? 'bg-primary-gradient text-white shadow-btn-primary'
@@ -196,7 +261,7 @@ export default function AppHeader() {
         {mobileMenuOpen && (
           <div className="lg:hidden pb-4 border-t border-slate-200/60 mt-2 pt-3 animate-[dropdownFadeIn_0.2s_ease]">
             <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
+              {[...navLinks, ...navLinks2].map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -206,6 +271,20 @@ export default function AppHeader() {
                   }`}
                 >
                   {link.icon}
+                  {link.label}
+                </Link>
+              ))}
+              {/* Master links */}
+              <div className="px-3 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wide">Master</div>
+              {masterLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMobile}
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors pl-6 ${
+                    pathname.startsWith(link.href) ? 'bg-primary-50 text-primary-600' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
                   {link.label}
                 </Link>
               ))}

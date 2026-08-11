@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiPlusCircle } from 'react-icons/bi';
+import { toast } from 'react-hot-toast';
 import SearchInput from '@/components/ui/SearchInput';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import FormInput from '@/components/forms/FormInput';
 import FormSelect from '@/components/forms/FormSelect';
 import EmptyState from '@/components/ui/EmptyState';
+import TableSkeleton from '@/components/ui/TableSkeleton';
 import { appointmentService } from '@/lib/services/appointments';
 import { patientService } from '@/lib/services/patients';
 import { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types';
@@ -20,7 +22,6 @@ export default function AppointmentsPage() {
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [rescheduleData, setRescheduleData] = useState<Appointment | null>(null);
@@ -30,27 +31,26 @@ export default function AppointmentsPage() {
     patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '',
   });
 
-  const fetchAppointments = useCallback(async () => {
+  const fetchAppointments = useCallback(async (date: string) => {
     try {
       setLoading(true);
-      setError(null);
-      const data = await appointmentService.getAll();
+      const data = await appointmentService.getByDate({ date });
       setAppointments(data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load appointments');
+      toast.error(err.response?.data?.detail || 'Failed to load appointments');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
+    fetchAppointments(selectedDate);
+  }, [fetchAppointments, selectedDate]);
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Filter to show appointments for the selected date
-  const selectedDateAppointments = appointments.filter(a => a.appointment_date === selectedDate);
+  // All appointments returned are already filtered by selectedDate from backend
+  const selectedDateAppointments = appointments;
 
   const filteredAppointments = search
     ? selectedDateAppointments.filter(a => a.patient_name.toLowerCase().includes(search.toLowerCase()) || (a.contact_number || '').includes(search))
@@ -67,13 +67,19 @@ export default function AppointmentsPage() {
   };
 
   const toggleStatus = async (id: number, checked: boolean) => {
-    try {
-      const newStatus = checked ? 'completed' : 'pending';
-      await appointmentService.updateStatus(id, newStatus);
-      fetchAppointments();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update status');
-    }
+    const newStatus = checked ? 'completed' : 'pending';
+    appointmentService.updateStatus(id, newStatus)
+      .then(() => {
+        setAppointments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+        );
+        toast.success(newStatus === 'completed' ? 'Marked as completed' : 'Marked as pending', {
+          style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+        });
+      })
+      .catch((err: any) => {
+        toast.error(err.response?.data?.detail || 'Failed to update status');
+      });
   };
 
   const handleAddPatient = (apt: Appointment) => {
@@ -83,33 +89,33 @@ export default function AppointmentsPage() {
 
   const handleConfirmAddPatient = async () => {
     if (!appointmentToConfirm) return;
+    const apt = appointmentToConfirm;
+
+    // Close modal immediately
+    setShowConfirmModal(false);
+    setAppointmentToConfirm(null);
+
     try {
-      // Mark appointment as completed
-      await appointmentService.updateStatus(appointmentToConfirm.id, 'completed');
-      
-      // Create patient from appointment data
+      await appointmentService.updateStatus(apt.id, 'completed');
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === apt.id ? { ...a, status: 'completed' } : a))
+      );
+
       const patientData: PatientCreate = {
-        name: appointmentToConfirm.patient_name,
-        age: appointmentToConfirm.age || undefined,
-        contact_number: appointmentToConfirm.contact_number || undefined,
-        address: appointmentToConfirm.address || undefined,
-        date_of_visit: appointmentToConfirm.appointment_date,
+        name: apt.patient_name,
+        age: apt.age || undefined,
+        contact_number: apt.contact_number || undefined,
+        address: apt.address || undefined,
+        date_of_visit: apt.appointment_date,
         payment_status: 'pending',
       };
       const newPatient = await patientService.create(patientData);
-      
-      // Show success message and navigate
-      setError(null);
-      setShowConfirmModal(false);
-      setAppointmentToConfirm(null);
-      
-      // Refresh appointments and navigate to dashboard
-      fetchAppointments();
+      toast.success(`${apt.patient_name} added as patient`, {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
       router.push(`/dashboard?patientId=${newPatient.id}&highlight=true`);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add patient');
-      setShowConfirmModal(false);
-      setAppointmentToConfirm(null);
+      toast.error(err.response?.data?.detail || 'Failed to add patient');
     }
   };
 
@@ -129,47 +135,86 @@ export default function AppointmentsPage() {
 
   const handleAdd = async (e: React.FormEvent<any>) => {
     e.preventDefault();
-    try {
-      const data = (e as any).formData || formData;
-      const createData: AppointmentCreate = {
-        patient_name: data.patient_name,
-        age: data.age ? Number(data.age) : undefined,
-        contact_number: data.contact_number || undefined,
-        appointment_date: data.appointment_date,
-        appointment_time: data.appointment_time,
-        booking_type: data.booking_type as 'walk-in' | 'call',
-        address: data.address || undefined,
-      };
-      await appointmentService.create(createData);
-      setShowAddModal(false);
-      setFormData({ patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '' });
-      fetchAppointments();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add appointment');
-    }
+    const data = (e as any).formData || formData;
+    const createData: AppointmentCreate = {
+      patient_name: data.patient_name,
+      age: data.age ? Number(data.age) : undefined,
+      contact_number: data.contact_number || undefined,
+      appointment_date: data.appointment_date,
+      appointment_time: data.appointment_time,
+      booking_type: data.booking_type as 'walk-in' | 'call',
+      address: data.address || undefined,
+    };
+
+    // Close modal immediately — don't wait for API
+    setShowAddModal(false);
+    setFormData({ patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '' });
+
+    // API call runs in background
+    appointmentService.create(createData)
+      .then((newAppointment) => {
+        if (newAppointment.appointment_date === selectedDate) {
+          setAppointments((prev) =>
+            [...prev, newAppointment].sort((a, b) =>
+              a.appointment_time.localeCompare(b.appointment_time)
+            )
+          );
+        }
+      })
+      .then(() => {
+        toast.success('Appointment added successfully', {
+          style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+        });
+      })
+      .catch((err: any) => {
+        toast.error(err.response?.data?.detail || 'Failed to add appointment');
+      });
   };
 
   const handleReschedule = async (e: React.FormEvent<any>) => {
     e.preventDefault();
     if (!rescheduleData) return;
-    try {
-      const data = (e as any).formData || formData;
-      const updateData: AppointmentUpdate = {
-        patient_name: data.patient_name,
-        age: data.age ? Number(data.age) : undefined,
-        contact_number: data.contact_number || undefined,
-        appointment_date: data.appointment_date,
-        appointment_time: data.appointment_time,
-        booking_type: data.booking_type as 'walk-in' | 'call',
-        address: data.address || undefined,
-      };
-      await appointmentService.update(rescheduleData.id, updateData);
-      setShowRescheduleModal(false);
-      fetchAppointments();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to reschedule');
-    }
+
+    const data = (e as any).formData || formData;
+    const updateData: AppointmentUpdate = {
+      patient_name: data.patient_name,
+      age: data.age ? Number(data.age) : undefined,
+      contact_number: data.contact_number || undefined,
+      appointment_date: data.appointment_date,
+      appointment_time: data.appointment_time,
+      booking_type: data.booking_type as 'walk-in' | 'call',
+      address: data.address || undefined,
+    };
+
+    const appointmentId = rescheduleData.id;
+
+    // Close modal immediately — don't wait for API
+    setShowRescheduleModal(false);
+    setRescheduleData(null);
+
+    // API call runs in background
+    appointmentService.update(appointmentId, updateData)
+      .then((updated) => {
+        if (updated.appointment_date === selectedDate) {
+          // Update row in-place and re-sort by time
+          setAppointments((prev) =>
+            prev
+              .map((a) => (a.id === updated.id ? updated : a))
+              .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
+          );
+        } else {
+          // Date changed to a different day — remove from current view
+          setAppointments((prev) => prev.filter((a) => a.id !== updated.id));
+        }
+        toast.success('Appointment rescheduled successfully', {
+          style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+        });
+      })
+      .catch((err: any) => {
+        toast.error(err.response?.data?.detail || 'Failed to reschedule');
+      });
   };
+
 
   const resetForm = () => ({
     patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '',
@@ -177,12 +222,27 @@ export default function AppointmentsPage() {
 
   const AppointmentForm = ({ onSubmit, submitLabel, initialData }: { onSubmit: (e: React.FormEvent) => void; submitLabel: string; initialData?: typeof formData }) => {
     const [data, setData] = useState(initialData || resetForm());
-    
+    const [contactError, setContactError] = useState('');
+
+    const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value.replace(/\D/g, ''); // digits only
+      setData({ ...data, contact_number: val });
+      if (val.length === 0) {
+        setContactError('Contact number is required');
+      } else if (val.length < 10) {
+        setContactError('Contact Number must be 10 digits');
+      } else {
+        setContactError('');
+      }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      // Update parent formData with current form data
+      if (data.contact_number.length !== 10) {
+        setContactError('Contact number must be exactly 10 digits');
+        return;
+      }
       setFormData(data);
-      // Create a synthetic event with the form data attached
       const syntheticEvent = {
         ...e,
         preventDefault: () => e.preventDefault(),
@@ -201,7 +261,23 @@ export default function AppointmentsPage() {
             <FormInput label="Age" value={data.age} onChange={(e) => setData({ ...data, age: e.target.value })} type="number" min="0" max="150" placeholder="Enter age" required />
           </div>
           <div>
-            <FormInput label="Contact Number" value={data.contact_number} onChange={(e) => setData({ ...data, contact_number: e.target.value })} required type="tel" pattern="[0-9]{10,15}" title="Please enter a valid phone number (10-15 digits)" placeholder="Enter contact number" />
+            <div>
+              <FormInput
+                label="Contact Number"
+                value={data.contact_number}
+                onChange={handleContactChange}
+                required
+                type="tel"
+                maxLength={10}
+                placeholder="Enter 10-digit number"
+              />
+              {contactError && (
+                <p className="mt-1 text-xs font-medium text-red-500">{contactError}</p>
+              )}
+              {!contactError && data.contact_number.length === 10 && (
+                <p className="mt-1 text-xs font-medium text-emerald-500">✓ Valid</p>
+              )}
+            </div>
           </div>
           <div>
             <FormInput label="Date" value={data.appointment_date} onChange={(e) => setData({ ...data, appointment_date: e.target.value })} type="date" required min={today} />
@@ -219,12 +295,14 @@ export default function AppointmentsPage() {
         <div className="flex justify-center gap-3 pt-6 border-t border-slate-200 mt-6">
           <Button type="submit" className="px-6 py-2">{submitLabel}</Button>
         </div>
+
       </form>
     );
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
+    <div className="h-full overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div className="w-full sm:max-w-xs">
           <SearchInput value={search} onChange={setSearch} placeholder="Search by name or number..." />
@@ -239,13 +317,6 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between items-center">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold">✕</button>
-        </div>
-      )}
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
@@ -261,12 +332,9 @@ export default function AppointmentsPage() {
         </div>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3">Loading appointments...</span>
-            </div>
+            <TableSkeleton rows={5} cols={7} />
           ) : appointments.length === 0 ? (
-            <EmptyState message="No appointments found" />
+            <EmptyState message={`No appointments found for ${selectedDate}`} />
           ) : (
             <table className="cms-table">
               <thead>
@@ -331,10 +399,10 @@ export default function AppointmentsPage() {
           <p className="text-slate-600">
             Are you sure you want to add <span className="font-semibold">{appointmentToConfirm?.patient_name}</span> to the patient table?
           </p>
-          <p className="text-sm text-slate-500">
-            • This appointment will be marked as completed
-            • A new patient record will be created
-          </p>
+          <ul className="list-disc list-inside text-sm text-slate-500 space-y-1">
+            <li>This appointment will be marked as completed</li>
+            <li>A new patient record will be created</li>
+          </ul>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
             <button
               onClick={() => {
@@ -367,6 +435,7 @@ export default function AppointmentsPage() {
           appointment_date: rescheduleData.appointment_date, appointment_time: rescheduleData.appointment_time, booking_type: rescheduleData.booking_type, address: rescheduleData.address || '',
         } : undefined} />
       </Modal>
+    </div>
     </div>
   );
 }

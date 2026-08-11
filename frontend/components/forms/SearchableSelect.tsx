@@ -28,7 +28,7 @@ export default function SearchableSelect({
   placeholder = 'Select an option',
   required = false,
   searchable = true,
-  maxDisplay = 5,
+  maxDisplay = 100,
   onCreateNew,
   isLoading = false,
 }: SearchableSelectProps) {
@@ -88,57 +88,99 @@ export default function SearchableSelect({
     }
   }, [isOpen, searchable]);
 
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const updateCoords = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 140),
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateCoords();
+    window.addEventListener('scroll', updateCoords, true);
+    window.addEventListener('resize', updateCoords);
+    return () => {
+      window.removeEventListener('scroll', updateCoords, true);
+      window.removeEventListener('resize', updateCoords);
+    };
+  }, [isOpen]);
+
+  const displayLabel = label ? label.replace(/\s*\*+$/, '').trim() : '';
+  const isRequired = required || (label && label.includes('*'));
+
   return (
-    <div className="space-y-2" ref={containerRef}>
-      <label className="block text-sm font-medium text-slate-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+    <div className={`relative ${displayLabel ? "space-y-1.5" : "w-full"}`} ref={containerRef}>
+      {displayLabel ? (
+        <label className="block text-xs font-medium text-slate-700">
+          {displayLabel}
+          {isRequired && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      ) : null}
 
       <div className="relative">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           disabled={isLoading}
-          className="w-full px-4 py-2 text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+          className="w-full px-3 py-1.5 text-xs text-left bg-white border border-slate-300 rounded-lg shadow-sm hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
         >
-          <span className={selectedOption ? 'text-slate-900' : 'text-slate-500'}>
+          <span className={selectedOption ? 'text-slate-900 font-medium truncate pr-1' : 'text-slate-400 truncate pr-1'}>
             {selectedOption?.label || placeholder}
           </span>
-          <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
 
-        {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-slate-300 rounded-lg shadow-lg">
+        {isOpen && menuCoords && (
+          <div
+            className="fixed z-[99999] bg-white border border-slate-300 rounded-xl shadow-2xl overflow-hidden animate-[dropdownFadeIn_0.15s_ease]"
+            style={{
+              top: `${menuCoords.top}px`,
+              left: `${menuCoords.left}px`,
+              width: `${menuCoords.width}px`,
+              maxWidth: '260px',
+            }}
+          >
             {searchable && (
-              <div className="p-3 border-b border-slate-200">
+              <div className="p-2 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
                 <input
                   ref={inputRef}
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
                 />
               </div>
             )}
 
-            <div className="max-h-64 overflow-y-auto">
+            <div
+              className="max-h-36 overflow-y-auto overscroll-contain"
+              onWheel={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+            >
               {displayedOptions.length > 0 ? (
                 displayedOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
-                    className={`w-full text-left px-4 py-2.5 hover:bg-slate-100 transition-colors text-sm ${
-                      value === opt.value ? 'bg-primary-50 text-primary-700 font-medium' : 'text-slate-700'
+                    className={`w-full text-left px-3.5 py-2 hover:bg-primary-50 hover:text-primary-600 transition-colors text-xs ${
+                      value === opt.value ? 'bg-primary-50 text-primary-700 font-semibold' : 'text-slate-700'
                     }`}
                   >
                     {opt.label}
                   </button>
                 ))
               ) : (
-                <div className="px-4 py-3 text-sm text-slate-500 text-center">
+                <div className="px-3 py-2 text-xs text-slate-400 text-center">
                   {searchTerm && onCreateNew ? 'No results. Click to create new.' : 'No options available'}
                 </div>
               )}

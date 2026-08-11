@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { BiClipboard, BiSolidPencil, BiSolidCheckCircle, BiSolidUserCheck, BiSolidUserPlus, BiBriefcase, BiPencil, BiPrinter, BiSolidFile, BiSolidAward } from 'react-icons/bi';
 import Dropdown from '@/components/ui/Dropdown';
 import DropdownItem from '@/components/ui/DropdownItem';
+import { printUrlSilently } from '@/lib/print-helper';
 
 interface PatientActionsCellProps {
   patientUid: string;
@@ -44,7 +45,7 @@ export default function PatientActionsCell({
             icon={<BiSolidAward className="text-amber-500" />}
             onClick={() => {
               if (patientUid) {
-                window.open(`/patients/${patientUid}/certificate/print`, '_blank');
+                printUrlSilently(`/patients/${patientUid}/certificate/print`);
               }
             }}
           >

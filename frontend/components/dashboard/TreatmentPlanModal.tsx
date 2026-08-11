@@ -6,6 +6,8 @@ import Button from '@/components/ui/Button';
 import FormTextarea from '@/components/forms/FormTextarea';
 import { masterTreatmentService } from '@/lib/services/master-treatment';
 
+import { toast } from 'react-hot-toast';
+
 interface TreatmentPlanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,13 +31,16 @@ export default function TreatmentPlanModal({ isOpen, onClose, onSave, saving: ex
         masterTreatmentService.createDiagnosis({ diagnosis_name: diagnosis }),
         masterTreatmentService.createTreatment({ treatment_name: treatment }),
       ]);
-      
+      toast.success('Treatment plan added successfully', {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
       setDiagnosis('');
       setTreatment('');
       onSave?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save:', err);
+      toast.error(err.response?.data?.detail || 'Failed to save treatment plan');
     } finally {
       setSaving(false);
     }

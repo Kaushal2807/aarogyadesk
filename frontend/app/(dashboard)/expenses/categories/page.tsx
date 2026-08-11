@@ -85,7 +85,8 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 mt-6 mb-4">
+    <div className="h-full overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 mt-6 mb-4">
       <div className="bg-white rounded-2xl shadow-card p-5 mb-4">
         <h5 className="font-bold text-slate-800 mb-4">Manage Expense Categories</h5>
         <SearchInput value={search} onChange={setSearch} placeholder="Search categories..." />
@@ -198,6 +199,7 @@ export default function CategoriesPage() {
           </div>
         </div>
       </Modal>
+    </div>
     </div>
   );
 }

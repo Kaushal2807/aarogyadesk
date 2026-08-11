@@ -97,7 +97,8 @@ export default function ExpenseHistoryPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 mt-6 mb-4">
+    <div className="h-full overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-4 mt-6 mb-4">
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-card p-4 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -153,6 +154,7 @@ export default function ExpenseHistoryPage() {
           </div>
         </form>
       </Modal>
+    </div>
     </div>
   );
 }

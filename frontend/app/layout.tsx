@@ -8,7 +8,7 @@ import MedicalBackground from '@/components/layout/MedicalBackground';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Aarogyasdesk - Clinical Management System',
+  title: 'Aarogyadesk - Clinical Management System',
   description: 'Modern clinical management system for dental clinics',
   icons: {
     icon: '/favicon.png',
@@ -26,7 +26,14 @@ export default function RootLayout({
         <MedicalBackground />
         <AuthProvider>
           {children}
-          <Toaster />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: { animation: 'slideInRight 0.3s ease forwards' },
+              error: { style: { animation: 'slideInRight 0.3s ease forwards' } },
+              success: { style: { animation: 'slideInRight 0.3s ease forwards' } },
+            }}
+          />
         </AuthProvider>
       </body>
     </html>

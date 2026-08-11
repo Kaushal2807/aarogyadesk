@@ -9,11 +9,14 @@ interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export default function FormSelect({ label, options, error, required, placeholder, id, className = '', ...props }: FormSelectProps) {
+  const displayLabel = label ? label.replace(/\s*\*+$/, '').trim() : '';
+  const isRequired = required || (label && label.includes('*'));
+
   return (
     <div className={className}>
       {label && (
         <label htmlFor={id} className="block text-sm font-semibold text-slate-600 mb-2">
-          {label} {required && <span className="text-red-500">*</span>}
+          {displayLabel} {isRequired && <span className="text-red-500">*</span>}
         </label>
       )}
       <select

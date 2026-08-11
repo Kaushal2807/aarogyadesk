@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import TableSkeleton from '@/components/ui/TableSkeleton';
 import FormInput from '@/components/forms/FormInput';
 import FormTextarea from '@/components/forms/FormTextarea';
 import FormSelect from '@/components/forms/FormSelect';
@@ -294,15 +295,9 @@ export default function ExpensesPage() {
   };
 
   return (
+    <div className="h-full overflow-y-auto">
     <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
-      {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <Button onClick={() => setShowAddExpense(true)} icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}>Add Expense</Button>
-        <Button onClick={() => setShowAddCategory(true)} variant="outline-primary" icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}>Add Category</Button>
-        <a href="/expenses/categories" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border-2 border-primary-500 text-primary-500 rounded-lg hover:bg-primary-500 hover:text-white transition-all shadow-sm">
-          Manage Categories
-        </a>
-      </div>
+
 
       {/* Charts - Row 1: Expense Trend and Payment Mode */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -347,15 +342,40 @@ export default function ExpensesPage() {
               />
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={paymentModeData} dataKey="value" nameKey="name" cx="40%" cy="50%" outerRadius={70}>
-                {paymentModeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-              </Pie>
-              <Legend layout="vertical" align="right" verticalAlign="middle" />
-              <Tooltip formatter={(value) => `₹${Number(value ?? 0).toLocaleString()}`} />
-            </PieChart>
-          </ResponsiveContainer>
+          {paymentModeData.length === 0 ? (
+            <div className="h-[220px] flex items-center justify-center text-slate-400 text-sm font-medium">
+              No expenses for selected month
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie 
+                  data={paymentModeData} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  cx="40%" 
+                  cy="50%" 
+                  outerRadius={75}
+                  labelLine={false}
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }) => {
+                    if (!value || !percent || percent < 0.03 || cx === undefined || cy === undefined || midAngle === undefined || innerRadius === undefined || outerRadius === undefined) return null;
+                    const RADIAN = Math.PI / 180;
+                    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text x={x} y={y} fill="#ffffff" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold drop-shadow-sm">
+                        {`₹${Number(value).toLocaleString()}`}
+                      </text>
+                    );
+                  }}
+                >
+                  {paymentModeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Legend layout="vertical" align="right" verticalAlign="middle" />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -396,27 +416,27 @@ export default function ExpensesPage() {
         <div className="p-5 border-b-2 border-slate-100">
           <div className="flex flex-col gap-4">
             {/* Header Row */}
-            <h5 className="font-bold text-slate-800 text-lg">Manage Expenses</h5>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h5 className="font-bold text-slate-800 text-lg">Manage Expenses</h5>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => setShowAddExpense(true)} icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}>Add Expense</Button>
+                <Button onClick={() => setShowAddCategory(true)} variant="outline-primary" icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}>Add Category</Button>
+              </div>
+            </div>
             
             {/* Filters and Search Row */}
-            <div className="flex items-end justify-between gap-3">
-              {/* Left: Empty space for symmetry */}
-              <div className="flex-1"></div>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              {/* Left: Search Field */}
+              <input 
+                type="text" 
+                placeholder="Search by title, category..." 
+                value={searchQuery} 
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                className="flex-1 max-w-xs outline-none text-sm border-b border-slate-200 py-1 text-slate-700 placeholder-slate-400 bg-transparent focus:border-primary-400 transition-colors"
+              />
               
-              {/* Center: Search Field */}
-              <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 w-80">
-                <svg xmlns="http://www.w3.org/2000/svg" className="text-slate-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input 
-                  type="text" 
-                  placeholder="Search by title, category..." 
-                  value={searchQuery} 
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  className="bg-transparent flex-1 outline-none text-sm"
-                />
-              </div>
-              
-              {/* Right: Filters */}
-              <div className="flex gap-2">
+              {/* Right: Month + Year Filters */}
+              <div className="flex items-center gap-2">
                 <FormSelect 
                   value={String(tableFilterMonth)} 
                   onChange={(e) => { setTableFilterMonth(Number(e.target.value)); setCurrentPage(1); }} 
@@ -436,10 +456,7 @@ export default function ExpensesPage() {
 
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3">Loading expenses...</span>
-            </div>
+            <TableSkeleton rows={5} cols={6} />
           ) : sortedExpenses.length === 0 ? (
             <EmptyState message="No expenses found for the selected filters" />
           ) : (
@@ -718,6 +735,7 @@ export default function ExpensesPage() {
           </div>
         </form>
       </Modal>
+    </div>
     </div>
   );
 }

@@ -48,10 +48,12 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   }
 
   return (
-    <div className={isPrintPage ? '' : 'max-w-7xl mx-auto px-4 mt-6 mb-4'}>
-      {!isPrintPage && <PatientHeader patient={patient} />}
-      {!isPrintPage && <PatientTabs uid={uid} />}
-      {children}
+    <div className={isPrintPage ? '' : 'h-full overflow-y-auto'}>
+      <div className={isPrintPage ? '' : 'max-w-7xl mx-auto px-4 mt-6 mb-4'}>
+        {!isPrintPage && <PatientHeader patient={patient} />}
+        {!isPrintPage && <PatientTabs uid={uid} />}
+        {children}
+      </div>
     </div>
   );
 }

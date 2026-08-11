@@ -67,7 +67,7 @@ export const auth = {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(SESSION_TIMESTAMP_KEY);
     localStorage.removeItem(TOKEN_KEY);
-    window.location.href = '/login';
+    window.location.replace('/login');
   },
 
   getCurrentUser: (): User | null => {
@@ -95,10 +95,13 @@ export const auth = {
   isAuthenticated: (): boolean => {
     if (typeof window === 'undefined') return false;
     const hasUser = !!localStorage.getItem(USER_KEY);
-    if (!hasUser) return false;
-    // Check if session is still valid
+    const hasToken = !!localStorage.getItem(TOKEN_KEY);
+    if (!hasUser || !hasToken) return false;
+    // If session expired, clean up silently without calling logout() (which redirects)
     if (!auth.isSessionValid()) {
-      auth.logout();
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(SESSION_TIMESTAMP_KEY);
+      localStorage.removeItem(TOKEN_KEY);
       return false;
     }
     return true;

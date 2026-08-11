@@ -6,6 +6,8 @@ import Button from '@/components/ui/Button';
 import FormInput from '@/components/forms/FormInput';
 import { workDoneService } from '@/lib/services/work-done';
 
+import { toast } from 'react-hot-toast';
+
 interface WorkDoneModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,11 +25,15 @@ export default function WorkDoneModal({ isOpen, onClose, onSave }: WorkDoneModal
     try {
       setSaving(true);
       await workDoneService.createWorkType({ work_name: workName });
+      toast.success('Work done type added successfully', {
+        style: { background: '#10b981', color: '#fff', fontWeight: '500' },
+      });
       setWorkName('');
       onSave?.();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save work done:', err);
+      toast.error(err.response?.data?.detail || 'Failed to save work done');
     } finally {
       setSaving(false);
     }

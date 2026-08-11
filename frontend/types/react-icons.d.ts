@@ -31,6 +31,7 @@ declare module 'react-icons/bi' {
   export const BiError: IconType;
   export const BiFile: IconType;
   export const BiFilter: IconType;
+  export const BiGridAlt: IconType;
   export const BiHelpCircle: IconType;
   export const BiHide: IconType;
   export const BiHome: IconType;

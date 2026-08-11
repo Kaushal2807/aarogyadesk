@@ -2,8 +2,8 @@ import apiClient from '@/lib/api';
 import { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types';
 
 export const appointmentService = {
-  getAll: async (params?: { date?: string; status?: string; skip?: number; limit?: number }): Promise<Appointment[]> => {
-    const { data } = await apiClient.get('/appointments', { params });
+  getByDate: async (params: { date: string; status?: string; skip?: number; limit?: number }): Promise<Appointment[]> => {
+    const { data } = await apiClient.post('/appointments/get', params);
     return data;
   },
 

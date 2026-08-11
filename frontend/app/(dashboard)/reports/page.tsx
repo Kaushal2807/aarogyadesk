@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BiChevronLeft, BiChevronRight } from 'react-icons/bi';
 import StatusBadge from '@/components/ui/StatusBadge';
-import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
 import FormSelect from '@/components/forms/FormSelect';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import TableSkeleton from '@/components/ui/TableSkeleton';
 import { patientService } from '@/lib/services/patients';
 import { Patient } from '@/types';
 
@@ -146,6 +147,7 @@ export default function ReportsPage() {
   };
 
   return (
+    <div className="h-full overflow-y-auto">
     <div className="max-w-7xl mx-auto px-4 mt-6 mb-4">
       {/* Error */}
       {error && (
@@ -155,12 +157,12 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Charts - Row 1: Patient Trend and Payment Status */}
+      {/* Charts - Row 1: Patients Trend and Payment Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Patient Trend Chart */}
+        {/* Patients Trend Chart */}
         <div className="bg-white rounded-2xl shadow-card p-5">
           <div className="flex justify-between items-center mb-4">
-            <h5 className="font-bold text-slate-800">Patient Trend</h5>
+            <h5 className="font-bold text-slate-800">Patients Trend</h5>
             <FormSelect 
               value={String(chartFilterYear)} 
               onChange={(e) => setChartFilterYear(Number(e.target.value))} 
@@ -198,15 +200,40 @@ export default function ReportsPage() {
               />
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={paymentStatusData} dataKey="value" nameKey="name" cx="40%" cy="50%" outerRadius={70}>
-                {paymentStatusData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-              </Pie>
-              <Legend layout="vertical" align="right" verticalAlign="middle" />
-              <Tooltip formatter={(value) => `${value} patients`} />
-            </PieChart>
-          </ResponsiveContainer>
+          {paymentStatusData.every(d => d.value === 0) ? (
+            <div className="h-[200px] flex items-center justify-center text-slate-400 text-sm font-medium">
+              No patient data for selected month
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie 
+                  data={paymentStatusData} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  cx="40%" 
+                  cy="50%" 
+                  outerRadius={70}
+                  labelLine={false}
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }) => {
+                    if (!value || !percent || percent < 0.03 || cx === undefined || cy === undefined || midAngle === undefined || innerRadius === undefined || outerRadius === undefined) return null;
+                    const RADIAN = Math.PI / 180;
+                    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text x={x} y={y} fill="#ffffff" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold drop-shadow-sm">
+                        {value}
+                      </text>
+                    );
+                  }}
+                >
+                  {paymentStatusData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Legend layout="vertical" align="right" verticalAlign="middle" />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -225,19 +252,23 @@ export default function ReportsPage() {
             </div>
 
             {/* Filters */}
-            <div className="flex items-end justify-between gap-3">
-              <FormSelect 
-                value={String(tableFilterMonth)} 
-                onChange={(e) => { setTableFilterMonth(Number(e.target.value)); setCurrentPage(1); }} 
-                options={monthOptions}
-                className="w-32"
-              />
-              <FormSelect 
-                value={String(tableFilterYear)} 
-                onChange={(e) => { setTableFilterYear(Number(e.target.value)); setCurrentPage(1); }} 
-                options={yearOptions}
-                className="w-32"
-              />
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              {/* Left: Date filters */}
+              <div className="flex items-center gap-2">
+                <FormSelect 
+                  value={String(tableFilterMonth)} 
+                  onChange={(e) => { setTableFilterMonth(Number(e.target.value)); setCurrentPage(1); }} 
+                  options={monthOptions}
+                  className="w-32"
+                />
+                <FormSelect 
+                  value={String(tableFilterYear)} 
+                  onChange={(e) => { setTableFilterYear(Number(e.target.value)); setCurrentPage(1); }} 
+                  options={yearOptions}
+                  className="w-32"
+                />
+              </div>
+              {/* Right: Payment status filter */}
               <FormSelect 
                 value={paymentStatusFilter} 
                 onChange={(e) => { setPaymentStatusFilter(e.target.value); setCurrentPage(1); }} 
@@ -250,10 +281,7 @@ export default function ReportsPage() {
 
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-400">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3">Loading reports...</span>
-            </div>
+            <TableSkeleton rows={5} cols={5} />
           ) : filteredPatients.length === 0 ? (
             <EmptyState message="No patients found for the selected filters" />
           ) : (
@@ -332,6 +360,7 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
