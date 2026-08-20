@@ -13,9 +13,6 @@ export default function AppFooter() {
           </Link>
           . All rights reserved.
         </p>
-        <p className="text-xs text-slate-400 font-medium text-center sm:text-right">
-          Clinical Management System
-        </p>
       </div>
     </footer>
   );
