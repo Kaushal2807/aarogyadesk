@@ -24,6 +24,7 @@ import { patientService } from '@/lib/services/patients';
 import { printUrlSilently } from '@/lib/print-helper';
 import { Patient, PatientCount, PatientCreate, PatientUpdate } from '@/types';
 import { toast } from 'react-hot-toast';
+import { featureFlags } from '@/lib/featureFlags';
 
 export default function DashboardPage() {
   const ITEMS_PER_PAGE = 10;
@@ -320,7 +321,7 @@ export default function DashboardPage() {
                   <th>Name</th>
                   <th className="text-center">Quick Actions</th>
                   <th className="text-center">Manage</th>
-                  <th className="text-center">Print</th>
+                  {featureFlags.enableTemplates && <th className="text-center">Print</th>}
                 </tr>
               </thead>
               <tbody>
@@ -343,15 +344,17 @@ export default function DashboardPage() {
                     <td className="text-center">
                       <StatusBadge status={patient.payment_status} />
                     </td>
-                    <td className="text-center">
-                      <PatientActionsCell
-                        patientUid={patient.patient_uid}
-                        patientName={patient.name}
-                        onPrintCase={() => handlePrintCase(patient)}
-                        onGenerateCertificate={() => { setActionPatient(patient); setShowCertificateModal(true); }}
-                        mode="print-only"
-                      />
-                    </td>
+                    {featureFlags.enableTemplates && (
+                      <td className="text-center">
+                        <PatientActionsCell
+                          patientUid={patient.patient_uid}
+                          patientName={patient.name}
+                          onPrintCase={() => handlePrintCase(patient)}
+                          onGenerateCertificate={() => { setActionPatient(patient); setShowCertificateModal(true); }}
+                          mode="print-only"
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
