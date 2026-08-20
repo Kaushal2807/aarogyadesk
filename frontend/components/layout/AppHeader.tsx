@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { BiMenu, BiX, BiLogOut, BiUser, BiCalendar, BiBarChart, BiWallet, BiCapsule, BiFile, BiHelpCircle, BiGridAlt } from 'react-icons/bi';
 import { Clinic } from '@/types';
+import { featureFlags } from '@/lib/featureFlags';
 
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: <BiBarChart className="w-4 h-4" /> },
@@ -183,41 +184,43 @@ export default function AppHeader() {
               </Link>
             ))}
 
-            {/* Templates Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setShowTemplates(true)}
-              onMouseLeave={() => setShowTemplates(false)}
-            >
-              <button
-                onClick={() => setShowTemplates(!showTemplates)}
-                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                  pathname.startsWith('/templates')
-                    ? 'bg-primary-gradient text-white shadow-btn-primary'
-                    : 'text-slate-600 hover:text-[#003D7A] hover:bg-slate-100'
-                }`}
+            {/* Templates Dropdown — hidden when enableTemplates flag is false */}
+            {featureFlags.enableTemplates && (
+              <div
+                className="relative"
+                onMouseEnter={() => setShowTemplates(true)}
+                onMouseLeave={() => setShowTemplates(false)}
               >
-                <BiFile className="w-4 h-4" />
-                Templates
-              </button>
-              {showTemplates && (
-                <div className="absolute top-full left-0 pt-1 w-52">
-                  <div className="bg-white rounded-xl shadow-lg border border-slate-100 py-1 animate-[dropdownFadeIn_0.2s_ease]">
-                    {templateLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        prefetch={true}
-                        onClick={() => setShowTemplates(false)}
-                        className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary-600 transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+                <button
+                  onClick={() => setShowTemplates(!showTemplates)}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                    pathname.startsWith('/templates')
+                      ? 'bg-primary-gradient text-white shadow-btn-primary'
+                      : 'text-slate-600 hover:text-[#003D7A] hover:bg-slate-100'
+                  }`}
+                >
+                  <BiFile className="w-4 h-4" />
+                  Templates
+                </button>
+                {showTemplates && (
+                  <div className="absolute top-full left-0 pt-1 w-52">
+                    <div className="bg-white rounded-xl shadow-lg border border-slate-100 py-1 animate-[dropdownFadeIn_0.2s_ease]">
+                      {templateLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          prefetch={true}
+                          onClick={() => setShowTemplates(false)}
+                          className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary-600 transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             <Link
               href="/support"
@@ -288,12 +291,16 @@ export default function AppHeader() {
                   {link.label}
                 </Link>
               ))}
-              <Link href="/templates/certificates" onClick={closeMobile} className="px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors pl-9">
-                Certificate Template
-              </Link>
-              <Link href="/templates/cases" onClick={closeMobile} className="px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors pl-9">
-                Case Template
-              </Link>
+              {featureFlags.enableTemplates && (
+                <>
+                  <Link href="/templates/certificates" onClick={closeMobile} className="px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors pl-9">
+                    Certificate Template
+                  </Link>
+                  <Link href="/templates/cases" onClick={closeMobile} className="px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors pl-9">
+                    Case Template
+                  </Link>
+                </>
+              )}
               <Link
                 href="/support"
                 onClick={closeMobile}
