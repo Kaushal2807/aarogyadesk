@@ -20,7 +20,7 @@ def get_prescriptions(db: Session, clinic_id: int, skip: int = 0, limit: int = 1
 
 
 def get_prescriptions_by_patient(db: Session, clinic_id: int, patient_uid: str):
-    return (
+    prescriptions = (
         db.query(Prescription)
         .filter(
             Prescription.clinic_id == clinic_id,
@@ -29,6 +29,8 @@ def get_prescriptions_by_patient(db: Session, clinic_id: int, patient_uid: str):
         .order_by(Prescription.prescription_date.desc())
         .all()
     )
+    # Enrich each prescription with joined master-table names for its items
+    return [get_prescription_with_items(db, p.id) for p in prescriptions]
 
 
 def _item_to_dict(item: PrescriptionItem) -> dict:
