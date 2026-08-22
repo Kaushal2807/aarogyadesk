@@ -10,7 +10,7 @@ from app.routers import (
 app = FastAPI(
     title="AarogyaDesk Clinical Management API",
     description="API for clinical management system",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 app.add_middleware(

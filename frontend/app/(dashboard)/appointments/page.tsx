@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { BiPlusCircle } from 'react-icons/bi';
+import { BiPlusCircle, BiChevronLeft, BiChevronRight } from 'react-icons/bi';
 import { toast } from 'react-hot-toast';
 import SearchInput from '@/components/ui/SearchInput';
 import Button from '@/components/ui/Button';
@@ -16,10 +16,15 @@ import { patientService } from '@/lib/services/patients';
 import { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types';
 import { PatientCreate } from '@/types';
 
+const PAGE_SIZE = 20;
+
 export default function AppointmentsPage() {
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -31,11 +36,20 @@ export default function AppointmentsPage() {
     patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '',
   });
 
-  const fetchAppointments = useCallback(async (date: string) => {
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const fetchAppointments = useCallback(async (date: string, page: number, searchTerm: string) => {
     try {
       setLoading(true);
-      const data = await appointmentService.getByDate({ date });
-      setAppointments(data);
+      const skip = (page - 1) * PAGE_SIZE;
+      const data = await appointmentService.getByDate({
+        date,
+        skip,
+        limit: PAGE_SIZE,
+        search: searchTerm || undefined,
+      });
+      setAppointments(data.items);
+      setTotal(data.total);
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to load appointments');
     } finally {
@@ -43,20 +57,30 @@ export default function AppointmentsPage() {
     }
   }, []);
 
+  // Debounce search input — reset to page 1 when search changes
   useEffect(() => {
-    fetchAppointments(selectedDate);
-  }, [fetchAppointments, selectedDate]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setDebouncedSearch('');
+    setSearch('');
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchAppointments(selectedDate, currentPage, debouncedSearch);
+  }, [fetchAppointments, selectedDate, currentPage, debouncedSearch]);
 
   const today = new Date().toISOString().split('T')[0];
 
-  // All appointments returned are already filtered by selectedDate from backend
-  const selectedDateAppointments = appointments;
-
-  const filteredAppointments = search
-    ? selectedDateAppointments.filter(a => a.patient_name.toLowerCase().includes(search.toLowerCase()) || (a.contact_number || '').includes(search))
-    : selectedDateAppointments;
-
-  const activeCount = selectedDateAppointments.filter((a) => a.status === 'pending').length;
+  // All filtering is now done server-side
+  const filteredAppointments = appointments;
+  const activeCount = total;
 
   const formatTime = (time: string) => {
     const [h, m] = time.split(':');
@@ -91,7 +115,6 @@ export default function AppointmentsPage() {
     if (!appointmentToConfirm) return;
     const apt = appointmentToConfirm;
 
-    // Close modal immediately
     setShowConfirmModal(false);
     setAppointmentToConfirm(null);
 
@@ -146,19 +169,14 @@ export default function AppointmentsPage() {
       address: data.address || undefined,
     };
 
-    // Close modal immediately — don't wait for API
     setShowAddModal(false);
     setFormData({ patient_name: '', age: '', contact_number: '', appointment_date: new Date().toISOString().split('T')[0], appointment_time: new Date().toTimeString().slice(0, 5), booking_type: 'walk-in', address: '' });
 
-    // API call runs in background
     appointmentService.create(createData)
       .then((newAppointment) => {
         if (newAppointment.appointment_date === selectedDate) {
-          setAppointments((prev) =>
-            [...prev, newAppointment].sort((a, b) =>
-              a.appointment_time.localeCompare(b.appointment_time)
-            )
-          );
+          // Refresh current page to reflect new entry and updated total
+          fetchAppointments(selectedDate, currentPage, debouncedSearch);
         }
       })
       .then(() => {
@@ -188,23 +206,20 @@ export default function AppointmentsPage() {
 
     const appointmentId = rescheduleData.id;
 
-    // Close modal immediately — don't wait for API
     setShowRescheduleModal(false);
     setRescheduleData(null);
 
-    // API call runs in background
     appointmentService.update(appointmentId, updateData)
       .then((updated) => {
         if (updated.appointment_date === selectedDate) {
-          // Update row in-place and re-sort by time
           setAppointments((prev) =>
             prev
               .map((a) => (a.id === updated.id ? updated : a))
               .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
           );
         } else {
-          // Date changed to a different day — remove from current view
           setAppointments((prev) => prev.filter((a) => a.id !== updated.id));
+          setTotal((prev) => Math.max(0, prev - 1));
         }
         toast.success('Appointment rescheduled successfully', {
           style: { background: '#10b981', color: '#fff', fontWeight: '500' },
@@ -225,7 +240,7 @@ export default function AppointmentsPage() {
     const [contactError, setContactError] = useState('');
 
     const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value.replace(/\D/g, ''); // digits only
+      const val = e.target.value.replace(/\D/g, '');
       setData({ ...data, contact_number: val });
       if (val.length === 0) {
         setContactError('Contact number is required');
@@ -351,7 +366,7 @@ export default function AppointmentsPage() {
               <tbody>
                 {filteredAppointments.map((apt, index) => (
                   <tr key={apt.id} className={apt.status === 'completed' ? 'opacity-50 line-through' : ''}>
-                    <td>{index + 1}</td>
+                    <td>{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
                     <td>{apt.patient_name}</td>
                     <td>{apt.contact_number}</td>
                     <td>{apt.appointment_date}</td>
@@ -388,6 +403,63 @@ export default function AppointmentsPage() {
             </table>
           )}
         </div>
+
+        {/* Pagination */}
+        {!loading && total > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50">
+            <p className="text-sm text-slate-500">
+              Showing <span className="font-semibold text-slate-700">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-slate-700">{Math.min(currentPage * PAGE_SIZE, total)}</span> of <span className="font-semibold text-slate-700">{total}</span> appointments
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                id="appointments-prev-page"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                aria-label="Previous page"
+              >
+                <BiChevronLeft size={18} />
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 text-slate-400 text-sm">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      id={`appointments-page-${p}`}
+                      onClick={() => setCurrentPage(p as number)}
+                      className={`flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                        currentPage === p
+                          ? 'bg-primary-600 text-white border border-primary-600 shadow-sm'
+                          : 'border border-slate-200 bg-white text-slate-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+              <button
+                id="appointments-next-page"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                aria-label="Next page"
+              >
+                <BiChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Confirm Add Patient Modal */}

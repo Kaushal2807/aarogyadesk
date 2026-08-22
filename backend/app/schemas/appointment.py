@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import date, datetime
 
 
@@ -43,5 +43,13 @@ class AppointmentResponse(BaseModel):
 class AppointmentFilter(BaseModel):
     date: date
     status: Optional[str] = None
+    search: Optional[str] = None
     skip: int = 0
-    limit: int = 100
+    limit: int = 20
+
+
+class AppointmentPaginatedResponse(BaseModel):
+    items: List[AppointmentResponse]
+    total: int
+    skip: int
+    limit: int

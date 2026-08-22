@@ -1,8 +1,15 @@
 import apiClient from '@/lib/api';
 import { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types';
 
+export interface AppointmentPaginatedResponse {
+  items: Appointment[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
 export const appointmentService = {
-  getByDate: async (params: { date: string; status?: string; skip?: number; limit?: number }): Promise<Appointment[]> => {
+  getByDate: async (params: { date: string; status?: string; search?: string; skip?: number; limit?: number }): Promise<AppointmentPaginatedResponse> => {
     const { data } = await apiClient.post('/appointments/get', params);
     return data;
   },

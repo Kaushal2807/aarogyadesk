@@ -2,26 +2,40 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.deps import get_clinic_id
-from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, AppointmentResponse, AppointmentFilter
+from app.schemas.appointment import AppointmentCreate, AppointmentUpdate, AppointmentResponse, AppointmentFilter, AppointmentPaginatedResponse
 from app.services.appointment_service import (
-    get_appointments, get_today_count, create_appointment,
+    get_appointments, get_appointments_count, get_today_count, create_appointment,
     update_appointment, update_status,
 )
 
 router = APIRouter(prefix="/api/appointments", tags=["appointments"])
 
 
-@router.post("/get", response_model=list[AppointmentResponse])
+@router.post("/get", response_model=AppointmentPaginatedResponse)
 def list_appointments(
     filters: AppointmentFilter,
     db: Session = Depends(get_db),
     clinic_id: int = Depends(get_clinic_id),
 ):
-    return get_appointments(
+    items = get_appointments(
         db,
         clinic_id,
         appointment_date=filters.date,
         status=filters.status,
+        search=filters.search,
+        skip=filters.skip,
+        limit=filters.limit,
+    )
+    total = get_appointments_count(
+        db,
+        clinic_id,
+        appointment_date=filters.date,
+        status=filters.status,
+        search=filters.search,
+    )
+    return AppointmentPaginatedResponse(
+        items=items,
+        total=total,
         skip=filters.skip,
         limit=filters.limit,
     )

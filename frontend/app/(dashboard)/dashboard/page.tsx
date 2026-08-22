@@ -196,7 +196,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-full px-4 pt-4 pb-2 max-w-[1400px] mx-auto overflow-hidden">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 shrink-0">
+      <div className="grid grid-cols-3 gap-3 mb-2 shrink-0">
         <KPICard
           title="Total Patients"
           subtitle="Patients registered"
@@ -209,7 +209,7 @@ export default function DashboardPage() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="border border-white/30 rounded-lg px-2 py-1 text-sm bg-white/20 text-white cursor-pointer font-medium backdrop-blur-sm w-auto max-w-[110px]"
+              className="border border-white/30 rounded-lg px-2 py-1 text-xs bg-white/20 text-white cursor-pointer font-medium backdrop-blur-sm w-[100px]"
             >
               {monthNames.map((m, idx) => (
                 <option key={idx} value={idx} className="text-indigo-900 bg-white">{m}</option>
@@ -231,7 +231,7 @@ export default function DashboardPage() {
             <select
               value={selectedPaymentStatus}
               onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-              className="border border-white/30 rounded-lg px-2 py-1 text-sm text-white cursor-pointer font-medium w-auto max-w-[115px]"
+              className="border border-white/30 rounded-lg px-2 py-1 text-xs text-white cursor-pointer font-medium w-[95px]"
               style={{ background: 'rgba(255,255,255,0.2)' }}
             >
               <option value="paid" className="text-slate-800 bg-white">Paid</option>
@@ -252,10 +252,10 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={openDatePicker}
-                className="flex items-center gap-1.5 px-2 py-1 border border-white/30 rounded-lg text-white text-xs font-medium"
+                className="flex items-center gap-1 px-2 py-1 border border-white/30 rounded-lg text-white text-xs font-medium"
                 style={{ background: 'rgba(255,255,255,0.15)' }}
               >
-                <BiCalendar className="w-3.5 h-3.5" />
+                <BiCalendar className="w-3 h-3" />
                 <span>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Date'}</span>
               </button>
               <input
@@ -281,7 +281,7 @@ export default function DashboardPage() {
       {/* Patient Records Panel */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden flex flex-col flex-1 min-h-0">
         {/* Panel Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl">
           <div className="flex items-center gap-2">
             <BsPeopleFill className="w-5 h-5 text-primary-500" />
             <span className="font-bold text-sm text-slate-800">Patient Records</span>
@@ -314,7 +314,7 @@ export default function DashboardPage() {
           ) : patients.length === 0 ? (
             <EmptyState message={search ? 'No patients found for your search' : 'No patients yet. Add your first patient!'} />
           ) : (
-            <table className="cms-table w-full">
+            <table className="cms-table w-full [&_td]:py-1.5 [&_th]:py-2">
               <thead className="sticky top-0 z-10">
                 <tr>
                   <th>Patient ID</th>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
 
         {/* Pagination */}
         {patients.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+          <div className="flex items-center justify-between px-4 py-2 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
             <div className="text-sm text-slate-600">
               Showing <span className="font-semibold">{startIndex + 1}</span> to <span className="font-semibold">{Math.min(endIndex, patients.length)}</span> of <span className="font-semibold">{patients.length}</span> patients
             </div>
